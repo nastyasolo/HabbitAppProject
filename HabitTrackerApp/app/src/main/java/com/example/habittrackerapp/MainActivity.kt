@@ -13,21 +13,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
 
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+
+import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             HabitTrackerAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    HabitTrackerApp()
                 }
             }
         }
     }
+}
+
+@Composable
+fun HabitTrackerApp() {
+    // Пока просто заглушка - потом добавим навигацию
+    Text("Hello, Habit Tracker! Приложение работает!")
 }
 
 @Composable
