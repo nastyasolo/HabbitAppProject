@@ -25,5 +25,15 @@ enum class HabitType {
 }
 
 enum class Priority {
-    LOW, MEDIUM, HIGH
+    LOW {
+        override val displayName: String get() = "Низкий"
+    },
+    MEDIUM {
+        override val displayName: String get() = "Средний"
+    },
+    HIGH {
+        override val displayName: String get() = "Высокий"
+    };
+
+    abstract val displayName: String
 }

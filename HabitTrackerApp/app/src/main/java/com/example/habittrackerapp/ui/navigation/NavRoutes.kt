@@ -1,9 +1,11 @@
 package com.example.habittrackerapp.ui.navigation
 
-sealed class NavRoutes(val route: String) {
-    object HabitList : NavRoutes("habitList")
-    object AddHabit : NavRoutes("addHabit")
-    object HabitDetail : NavRoutes("habitDetail/{habitId}") {
-        fun createRoute(habitId: String) = "habitDetail/$habitId"
+sealed class Screen(val route: String) {
+    object HabitList : Screen("habitList")
+    object AddEditHabit : Screen("addEditHabit?habitId={habitId}") {
+        fun createRoute(habitId: String? = null) =
+            if (habitId != null) "addEditHabit?habitId=$habitId" else "addEditHabit"
     }
+    object Statistics : Screen("statistics")
+    object Settings : Screen("settings")
 }

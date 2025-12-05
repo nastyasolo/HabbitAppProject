@@ -30,7 +30,6 @@ fun HabitListScreen(
     val state = viewModel.state.collectAsState().value
 
     LaunchedEffect(Unit) {
-        // Используем событие через viewModel
         viewModel.onEvent(HabitListEvent.Reload)
     }
 
@@ -51,6 +50,7 @@ fun HabitListScreen(
             )
         },
         floatingActionButton = {
+            // Используем простую FAB без Extended
             FloatingActionButton(
                 onClick = onAddHabitClick,
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -85,7 +85,8 @@ fun HabitListScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = {
+                        // Используем androidx.compose.material3.Button
+                        androidx.compose.material3.Button(onClick = {
                             viewModel.onEvent(HabitListEvent.Reload)
                         }) {
                             Text("Повторить")

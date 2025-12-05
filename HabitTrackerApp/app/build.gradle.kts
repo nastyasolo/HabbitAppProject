@@ -101,16 +101,12 @@ dependencies {
     // Compose tooling
     debugImplementation(libs.androidx.ui.tooling)
 
-
-
-
-    // Compose Material Icons
-    implementation(libs.androidx.material.icons.extended)
     
     // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-
+    implementation("androidx.compose.ui:ui-text:1.6.8")
+    implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
 }
 
