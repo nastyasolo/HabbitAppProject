@@ -23,4 +23,8 @@ interface HabitDao {
 
     @Query("DELETE FROM habits WHERE id = :id")
     suspend fun deleteHabitById(id: String)
+
+    // Добавляем этот метод
+    @Query("SELECT * FROM habits ORDER BY createdAt DESC")
+    suspend fun getAllHabitsSimple(): List<Habit>
 }

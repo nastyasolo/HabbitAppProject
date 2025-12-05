@@ -69,6 +69,13 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // ViewModel
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
@@ -85,6 +92,7 @@ dependencies {
     // Android instrumentation tests
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
 
     // For UI test manifest
@@ -92,6 +100,18 @@ dependencies {
 
     // Compose tooling
     debugImplementation(libs.androidx.ui.tooling)
+
+
+
+
+    // Compose Material Icons
+    implementation(libs.androidx.material.icons.extended)
+    
+    // Lifecycle
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
+
+
 }
 
 ksp {

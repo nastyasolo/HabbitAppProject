@@ -3,7 +3,8 @@ package com.example.habittrackerapp.di
 import android.content.Context
 import com.example.habittrackerapp.data.database.AppDatabase
 import com.example.habittrackerapp.data.database.HabitDao
-import com.example.habittrackerapp.data.repository.HabitRepository
+import com.example.habittrackerapp.data.repository.HabitRepositoryImpl
+import com.example.habittrackerapp.domain.repository.HabitRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,6 +30,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideHabitRepository(habitDao: HabitDao): HabitRepository {
-        return HabitRepository(habitDao)
+        return HabitRepositoryImpl(habitDao)
     }
 }
