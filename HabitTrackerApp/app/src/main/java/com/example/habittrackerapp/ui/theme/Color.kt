@@ -55,12 +55,17 @@ val DarkOutline = Color(0xFF938F99)
 val DarkOutlineVariant = Color(0xFF49454F)
 
 // Цвета для приоритетов
-val PriorityHigh = Color(0xFFFF8A80) // Красный пастельный
-val PriorityHighContainer = Color(0xFFFFCDD2)
-val PriorityMedium = Color(0xFFFFD54F) // Желтый пастельный
-val PriorityMediumContainer = Color(0xFFFFF9C4)
-val PriorityLow = Color(0xFF81C784) // Зеленый пастельный
-val PriorityLowContainer = Color(0xFFC8E6C9)
+val PriorityHigh = Color(0xFFD32F2F) // Темно-красный
+val PriorityHighContainer = Color(0xFFFFCDD2) // Светло-красный
+val PriorityHighText = Color(0xFF000000) // Черный для контраста
+
+val PriorityMedium = Color(0xFFF57C00) // Оранжевый
+val PriorityMediumContainer = Color(0xFFFFF3E0) // Светло-оранжевый
+val PriorityMediumText = Color(0xFF000000) // Черный для контраста
+
+val PriorityLow = Color(0xFF388E3C) // Темно-зеленый
+val PriorityLowContainer = Color(0xFFC8E6C9) // Светло-зеленый
+val PriorityLowText = Color(0xFF000000) // Черный для контраста
 
 // Градиенты
 val GradientStart = Color(0xFF6A11CB)

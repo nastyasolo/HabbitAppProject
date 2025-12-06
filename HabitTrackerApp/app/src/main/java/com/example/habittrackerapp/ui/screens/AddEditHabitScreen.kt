@@ -6,8 +6,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Notifications
@@ -23,11 +23,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.habittrackerapp.domain.model.HabitType
 import com.example.habittrackerapp.domain.model.Priority
+import com.example.habittrackerapp.ui.components.PriorityChip
 import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
 import com.example.habittrackerapp.ui.theme.PriorityHigh
 import com.example.habittrackerapp.ui.theme.PriorityLow
@@ -37,6 +40,7 @@ import com.example.habittrackerapp.ui.theme.PriorityMediumContainer
 import com.example.habittrackerapp.ui.theme.PriorityLowContainer
 import com.example.habittrackerapp.ui.viewmodel.AddEditHabitEvent
 import com.example.habittrackerapp.ui.viewmodel.AddEditHabitViewModel
+import com.example.habittrackerapp.ui.components.TimeTransformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -187,6 +191,11 @@ fun AddEditHabitScreen(
                                 ),
                                 isError = state.nameError != null,
                                 singleLine = true,
+                                maxLines = 1, // Фиксируем одну строку
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Text,
+                                    imeAction = ImeAction.Next
+                                ),
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Create,
@@ -232,6 +241,10 @@ fun AddEditHabitScreen(
                                     unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
                                 maxLines = 3,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Text,
+                                    imeAction = ImeAction.Next
+                                ),
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Description,
@@ -296,7 +309,6 @@ fun AddEditHabitScreen(
                                 }
                             }
                         }
-
                         // Приоритет
                         Column {
                             Text(
@@ -312,56 +324,10 @@ fun AddEditHabitScreen(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Priority.values().forEach { priority ->
-                                    val isSelected = state.priority == priority
-                                    ElevatedFilterChip(
-                                        selected = isSelected,
+                                    PriorityChip(
+                                        priority = priority,
+                                        isSelected = state.priority == priority,
                                         onClick = { viewModel.onEvent(AddEditHabitEvent.PriorityChanged(priority)) },
-                                        label = {
-                                            Text(
-                                                priority.displayName,
-                                                style = MaterialTheme.typography.labelLarge
-                                            )
-                                        },
-                                        colors = FilterChipDefaults.elevatedFilterChipColors(
-                                            containerColor = when (priority) {
-                                                Priority.HIGH -> PriorityHighContainer.copy(alpha = 0.3f)
-                                                Priority.MEDIUM -> PriorityMediumContainer.copy(alpha = 0.3f)
-                                                Priority.LOW -> PriorityLowContainer.copy(alpha = 0.3f)
-                                            },
-                                            selectedContainerColor = when (priority) {
-                                                Priority.HIGH -> PriorityHighContainer
-                                                Priority.MEDIUM -> PriorityMediumContainer
-                                                Priority.LOW -> PriorityLowContainer
-                                            },
-                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onSurface,
-                                            iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            selectedLeadingIconColor = MaterialTheme.colorScheme.onSurface
-                                        ),
-                                        leadingIcon = if (isSelected) {
-                                            {
-                                                Icon(
-                                                    imageVector = when (priority) {
-                                                        Priority.HIGH -> Icons.Default.Warning
-                                                        Priority.MEDIUM -> Icons.Default.Info
-                                                        Priority.LOW -> Icons.Default.CheckCircle
-                                                    },
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                            }
-                                        } else null,
-                                        border = FilterChipDefaults.filterChipBorder(
-                                            borderColor = MaterialTheme.colorScheme.outlineVariant,
-                                            selectedBorderColor = when (priority) {
-                                                Priority.HIGH -> PriorityHigh
-                                                Priority.MEDIUM -> PriorityMedium
-                                                Priority.LOW -> PriorityLow
-                                            },
-                                            borderWidth = 1.dp,
-                                            selectedBorderWidth = 2.dp
-                                        ),
-                                        elevation = FilterChipDefaults.elevatedFilterChipElevation(),
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
@@ -378,10 +344,13 @@ fun AddEditHabitScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
+
                             OutlinedTextField(
                                 value = state.reminderTime ?: "",
                                 onValueChange = {
-                                    val newValue = it.ifEmpty { null }
+                                    // Ограничиваем ввод только цифрами и двоеточием
+                                    val filtered = it.filter { char -> char.isDigit() || char == ':' }
+                                    val newValue = if (filtered.isEmpty()) null else filtered
                                     viewModel.onEvent(AddEditHabitEvent.ReminderTimeChanged(newValue))
                                 },
                                 label = { Text("Например: 09:00") },
@@ -397,17 +366,20 @@ fun AddEditHabitScreen(
                                     focusedLabelColor = MaterialTheme.colorScheme.primary,
                                     unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
-                                keyboardOptions = KeyboardOptions.Default.copy(
-                                    keyboardType = KeyboardType.Number
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done
                                 ),
-                                placeholder = { Text("Не задано - не будет напоминаний") },
+                                placeholder = { Text("ЧЧ:ММ") },
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Notifications,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                                     )
-                                }
+                                },
+                                singleLine = true,
+                                maxLines = 1
                             )
                             Text(
                                 text = "Напоминание поможет не забыть о привычке",

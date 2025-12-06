@@ -9,3 +9,11 @@ sealed class Screen(val route: String) {
     object Statistics : Screen("statistics")
     object Settings : Screen("settings")
 }
+
+// Модель для элемента нижней навигации
+data class BottomNavItem(
+    val route: String,
+    val title: String,
+    val icon: Int, // Используем ресурсы для иконок
+    val selectedIcon: Int
+)

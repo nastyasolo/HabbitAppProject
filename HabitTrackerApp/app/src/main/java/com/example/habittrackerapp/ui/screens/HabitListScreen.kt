@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.habittrackerapp.ui.components.EmptyState
 import com.example.habittrackerapp.ui.components.HabitCard
 import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
 import com.example.habittrackerapp.ui.viewmodel.HabitListEvent
@@ -101,21 +102,31 @@ fun HabitListScreen(
                     }
                 }
                 state.habits.isEmpty() -> {
-                    Column(
+                    Box(
                         modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Привычек пока нет",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = "Нажмите + чтобы добавить первую привычку",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        EmptyState(
+                            title = "Привычек пока нет",
+                            subtitle = "Начните свой путь к новым привычкам прямо сейчас",
+                            showAction = true
                         )
                     }
+//                    Column(
+//                        modifier = Modifier.fillMaxSize(),
+//                        horizontalAlignment = Alignment.CenterHorizontally,
+//                        verticalArrangement = Arrangement.Center
+//                    ) {
+//                        Text(
+//                            text = "Привычек пока нет",
+//                            style = MaterialTheme.typography.titleMedium
+//                        )
+//                        Text(
+//                            text = "Нажмите + чтобы добавить первую привычку",
+//                            style = MaterialTheme.typography.bodyMedium,
+//                            color = MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
+//                    }
                 }
                 else -> {
                     LazyColumn(
