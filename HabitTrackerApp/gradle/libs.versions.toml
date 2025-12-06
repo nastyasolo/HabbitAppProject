@@ -27,7 +27,7 @@ lifecycleRuntimeCompose = "2.7.0"
 viewmodelCompose = "2.7.0"
 coroutines = "1.7.3"
 
-
+firebaseBom = "32.7.0"
 # --------------------------------------------------------------------------------------------------
 
 [libraries]
@@ -84,7 +84,12 @@ androidx-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 
 
-
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 # --------------------------------------------------------------------------------------------------
 
 [plugins]

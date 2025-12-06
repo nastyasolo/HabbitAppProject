@@ -4,7 +4,9 @@ import android.content.Context
 import com.example.habittrackerapp.data.InitialDataProvider
 import com.example.habittrackerapp.data.database.AppDatabase
 import com.example.habittrackerapp.data.database.HabitDao
+import com.example.habittrackerapp.data.repository.AuthRepositoryImpl
 import com.example.habittrackerapp.data.repository.HabitRepositoryImpl
+import com.example.habittrackerapp.domain.repository.AuthRepository
 import com.example.habittrackerapp.domain.repository.HabitRepository
 import dagger.Module
 import dagger.Provides
