@@ -32,6 +32,9 @@ import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
 import com.example.habittrackerapp.ui.theme.PriorityHigh
 import com.example.habittrackerapp.ui.theme.PriorityLow
 import com.example.habittrackerapp.ui.theme.PriorityMedium
+import com.example.habittrackerapp.ui.theme.PriorityHighContainer
+import com.example.habittrackerapp.ui.theme.PriorityMediumContainer
+import com.example.habittrackerapp.ui.theme.PriorityLowContainer
 import com.example.habittrackerapp.ui.viewmodel.AddEditHabitEvent
 import com.example.habittrackerapp.ui.viewmodel.AddEditHabitViewModel
 
@@ -321,14 +324,14 @@ fun AddEditHabitScreen(
                                         },
                                         colors = FilterChipDefaults.elevatedFilterChipColors(
                                             containerColor = when (priority) {
-                                                Priority.HIGH -> PriorityHigh.copy(alpha = 0.3f)
-                                                Priority.MEDIUM -> PriorityMedium.copy(alpha = 0.3f)
-                                                Priority.LOW -> PriorityLow.copy(alpha = 0.3f)
+                                                Priority.HIGH -> PriorityHighContainer.copy(alpha = 0.3f)
+                                                Priority.MEDIUM -> PriorityMediumContainer.copy(alpha = 0.3f)
+                                                Priority.LOW -> PriorityLowContainer.copy(alpha = 0.3f)
                                             },
                                             selectedContainerColor = when (priority) {
-                                                Priority.HIGH -> PriorityHigh
-                                                Priority.MEDIUM -> PriorityMedium
-                                                Priority.LOW -> PriorityLow
+                                                Priority.HIGH -> PriorityHighContainer
+                                                Priority.MEDIUM -> PriorityMediumContainer
+                                                Priority.LOW -> PriorityLowContainer
                                             },
                                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                             selectedLabelColor = MaterialTheme.colorScheme.onSurface,
