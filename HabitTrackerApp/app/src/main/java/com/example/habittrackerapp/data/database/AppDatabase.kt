@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import android.content.Context
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.habittrackerapp.data.model.Habit
 
 @Database(
@@ -26,7 +27,18 @@ abstract class AppDatabase : RoomDatabase() {
                     context,
                     AppDatabase::class.java,
                     "habit_database"
-                ).build().also { Instance = it }
+                )
+                    .addCallback(DatabaseCallback()) // Добавляем callback
+                    .build()
+                    .also { Instance = it }
+            }
+        }
+
+        private class DatabaseCallback : RoomDatabase.Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                super.onCreate(db)
+                // Здесь можно было бы добавить начальные данные,
+                // но мы будем делать это через Hilt
             }
         }
     }

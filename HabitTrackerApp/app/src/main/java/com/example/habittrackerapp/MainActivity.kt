@@ -90,10 +90,28 @@ fun HabitTrackerApp() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Light Theme")
 @Composable
-fun HabitTrackerAppPreview() {
-    HabitTrackerAppTheme {
-        HabitTrackerApp()
+fun HabitTrackerAppPreview_Light() {
+    HabitTrackerAppTheme(darkTheme = false) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            HabitTrackerApp()
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Dark Theme")
+@Composable
+fun HabitTrackerAppPreview_Dark() {
+    HabitTrackerAppTheme(darkTheme = true) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            HabitTrackerApp()
+        }
     }
 }

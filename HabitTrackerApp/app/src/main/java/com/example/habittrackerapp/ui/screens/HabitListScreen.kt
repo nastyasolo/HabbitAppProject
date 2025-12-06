@@ -3,6 +3,7 @@ package com.example.habittrackerapp.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
@@ -54,9 +55,15 @@ fun HabitListScreen(
             FloatingActionButton(
                 onClick = onAddHabitClick,
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.padding(bottom = 16.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Добавить привычку")
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Добавить привычку",
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     ) { paddingValues ->

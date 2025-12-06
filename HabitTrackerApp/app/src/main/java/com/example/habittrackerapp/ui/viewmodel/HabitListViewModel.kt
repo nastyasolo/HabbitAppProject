@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.habittrackerapp.domain.model.Habit
 import com.example.habittrackerapp.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,7 +21,11 @@ class HabitListViewModel @Inject constructor(
     val state: StateFlow<HabitListState> = _state.asStateFlow()
 
     init {
-        loadHabits()
+        viewModelScope.launch {
+            // Даем небольшую задержку чтобы база успела инициализироваться
+            delay(100)
+            loadHabits()
+        }
     }
 
     private fun loadHabits() {
