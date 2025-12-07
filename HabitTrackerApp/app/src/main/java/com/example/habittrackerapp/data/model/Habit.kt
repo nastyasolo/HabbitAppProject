@@ -2,6 +2,7 @@ package com.example.habittrackerapp.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.habittrackerapp.domain.model.SyncStatus
 
 @Entity(tableName = "habits")
 data class Habit(
@@ -9,13 +10,20 @@ data class Habit(
     val id: String,
     val name: String,
     val description: String = "",
-    val type: HabitType = HabitType.DAILY,
+    val type: String = "DAILY",  // Изменяем HabitType -> String
     val streak: Int = 0,
     val isCompleted: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val reminderTime: String? = null,
-    val priority: Priority = Priority.MEDIUM
+    val priority: String = "MEDIUM",  // Изменяем Priority -> String
+    val category: String = "General",
+    val lastCompleted: Long? = null,
+    val syncStatus: String = SyncStatus.PENDING.name,  // Добавляем syncStatus как String
+    val lastSynced: Long? = null  // Добавляем lastSynced
 )
+
+// Эти enum'ы нужно вынести в domain слой, но оставим пока здесь
+// Вместо этого, удалите отсюда HabitType и Priority, они должны быть в domain
 
 enum class HabitType {
     DAILY {

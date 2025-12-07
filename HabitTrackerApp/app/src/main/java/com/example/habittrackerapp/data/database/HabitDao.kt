@@ -24,7 +24,18 @@ interface HabitDao {
     @Query("DELETE FROM habits WHERE id = :id")
     suspend fun deleteHabitById(id: String)
 
-    // Добавляем этот метод
     @Query("SELECT * FROM habits ORDER BY createdAt DESC")
     suspend fun getAllHabitsSimple(): List<Habit>
+
+    // Новый метод для получения привычек, ожидающих синхронизации
+    @Query("SELECT * FROM habits WHERE syncStatus = 'PENDING'")
+    suspend fun getPendingHabits(): List<Habit>
+
+    // Новый метод для обновления статуса синхронизации
+    @Query("UPDATE habits SET syncStatus = :status, lastSynced = :timestamp WHERE id = :id")
+    suspend fun updateSyncStatus(id: String, status: String, timestamp: Long)
+
+    // Метод для получения привычек по категории
+    @Query("SELECT * FROM habits WHERE category = :category ORDER BY createdAt DESC")
+    fun getHabitsByCategory(category: String): Flow<List<Habit>>
 }

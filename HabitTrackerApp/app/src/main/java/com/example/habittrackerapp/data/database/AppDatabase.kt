@@ -4,17 +4,18 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import android.content.Context
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.habittrackerapp.data.model.Habit
+import com.example.habittrackerapp.data.database.HabitDao
+import android.content.Context
 
 @Database(
     entities = [Habit::class],
-    version = 1,
+    version = 2,  //
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun habitDao(): HabitDao
 
     companion object {
@@ -28,17 +29,9 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "habit_database"
                 )
-                    .addCallback(DatabaseCallback()) // Добавляем callback
+                    .fallbackToDestructiveMigration()  // Временное решение для миграции
                     .build()
                     .also { Instance = it }
-            }
-        }
-
-        private class DatabaseCallback : RoomDatabase.Callback() {
-            override fun onCreate(db: SupportSQLiteDatabase) {
-                super.onCreate(db)
-                // Здесь можно было бы добавить начальные данные,
-                // но мы будем делать это через Hilt
             }
         }
     }

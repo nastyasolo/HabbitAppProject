@@ -12,4 +12,9 @@ interface HabitRepository {
     suspend fun toggleHabitCompletion(id: String)
     suspend fun getTodayHabits(): List<Habit>
     suspend fun getWeeklyHabits(): List<Habit>
+    // Методы для синхронизации
+    suspend fun syncHabits(): Boolean
+    suspend fun syncPendingHabits(): Boolean
+    suspend fun markHabitAsSynced(habitId: String)
+    suspend fun getPendingHabits(): List<Habit>
 }

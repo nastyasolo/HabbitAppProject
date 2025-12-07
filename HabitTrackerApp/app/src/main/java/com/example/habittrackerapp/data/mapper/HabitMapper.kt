@@ -2,49 +2,45 @@ package com.example.habittrackerapp.data.mapper
 
 import com.example.habittrackerapp.data.model.Habit as HabitEntity
 import com.example.habittrackerapp.domain.model.Habit as HabitDomain
-import com.example.habittrackerapp.domain.model.HabitType as DomainHabitType
-import com.example.habittrackerapp.domain.model.Priority as DomainPriority
-import com.example.habittrackerapp.data.model.HabitType as EntityHabitType
-import com.example.habittrackerapp.data.model.Priority as EntityPriority
+import com.example.habittrackerapp.domain.model.HabitType
+import com.example.habittrackerapp.domain.model.Priority
+import com.example.habittrackerapp.domain.model.SyncStatus
 
-fun HabitEntity.toDomain(): HabitDomain {
-    return HabitDomain(
-        id = id,
-        name = name,
-        description = description,
-        type = when (type) {
-            EntityHabitType.DAILY -> DomainHabitType.DAILY
-            EntityHabitType.WEEKLY -> DomainHabitType.WEEKLY
-        },
-        streak = streak,
-        isCompleted = isCompleted,
-        createdAt = createdAt,
-        reminderTime = reminderTime,
-        priority = when (priority) {
-            EntityPriority.LOW -> DomainPriority.LOW
-            EntityPriority.MEDIUM -> DomainPriority.MEDIUM
-            EntityPriority.HIGH -> DomainPriority.HIGH
-        }
-    )
-}
+object HabitMapper {
 
-fun HabitDomain.toEntity(): HabitEntity {
-    return HabitEntity(
-        id = id,
-        name = name,
-        description = description,
-        type = when (type) {
-            DomainHabitType.DAILY -> EntityHabitType.DAILY
-            DomainHabitType.WEEKLY -> EntityHabitType.WEEKLY
-        },
-        streak = streak,
-        isCompleted = isCompleted,
-        createdAt = createdAt,
-        reminderTime = reminderTime,
-        priority = when (priority) {
-            DomainPriority.LOW -> EntityPriority.LOW
-            DomainPriority.MEDIUM -> EntityPriority.MEDIUM
-            DomainPriority.HIGH -> EntityPriority.HIGH
-        }
-    )
+    fun toDomain(entity: HabitEntity): HabitDomain {
+        return HabitDomain(
+            id = entity.id,
+            name = entity.name,
+            description = entity.description,
+            type = HabitType.valueOf(entity.type),
+            priority = Priority.valueOf(entity.priority),
+            reminderTime = entity.reminderTime,
+            isCompleted = entity.isCompleted,
+            streak = entity.streak,
+            createdAt = entity.createdAt,
+            lastCompleted = entity.lastCompleted,
+            category = entity.category,
+            syncStatus = SyncStatus.valueOf(entity.syncStatus),
+            lastSynced = entity.lastSynced
+        )
+    }
+
+    fun toEntity(domain: HabitDomain): HabitEntity {
+        return HabitEntity(
+            id = domain.id,
+            name = domain.name,
+            description = domain.description,
+            type = domain.type.name,
+            priority = domain.priority.name,
+            reminderTime = domain.reminderTime,
+            isCompleted = domain.isCompleted,
+            streak = domain.streak,
+            createdAt = domain.createdAt,
+            lastCompleted = domain.lastCompleted,
+            category = domain.category,
+            syncStatus = domain.syncStatus.name,
+            lastSynced = domain.lastSynced
+        )
+    }
 }

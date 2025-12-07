@@ -5,7 +5,8 @@ import com.example.habittrackerapp.data.InitialDataProvider
 import com.example.habittrackerapp.data.database.AppDatabase
 import com.example.habittrackerapp.data.database.HabitDao
 import com.example.habittrackerapp.data.repository.AuthRepositoryImpl
-import com.example.habittrackerapp.data.repository.HabitRepositoryImpl
+import com.example.habittrackerapp.data.repository.SyncHabitRepositoryImpl
+import com.example.habittrackerapp.data.sync.SyncManager
 import com.example.habittrackerapp.domain.repository.AuthRepository
 import com.example.habittrackerapp.domain.repository.HabitRepository
 import dagger.Module
@@ -33,13 +34,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideHabitRepository(habitDao: HabitDao): HabitRepository {
-        return HabitRepositoryImpl(habitDao)
+    fun provideInitialDataProvider(habitDao: HabitDao): InitialDataProvider {
+        return InitialDataProvider(habitDao)
     }
 
     @Provides
     @Singleton
-    fun provideInitialDataProvider(habitDao: HabitDao): InitialDataProvider {
-        return InitialDataProvider(habitDao)
+    fun provideContext(@ApplicationContext context: Context): Context {
+        return context
     }
 }

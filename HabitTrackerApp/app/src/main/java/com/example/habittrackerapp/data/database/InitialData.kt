@@ -1,6 +1,6 @@
 package com.example.habittrackerapp.data.database
 
-import com.example.habittrackerapp.data.mapper.toEntity
+import com.example.habittrackerapp.data.mapper.HabitMapper
 import com.example.habittrackerapp.domain.model.Habit
 import com.example.habittrackerapp.domain.model.HabitType
 import com.example.habittrackerapp.domain.model.Priority
@@ -44,7 +44,7 @@ class InitialData(private val database: AppDatabase, private val scope: Coroutin
                 )
 
                 initialHabits.forEach { habit ->
-                    database.habitDao().insertHabit(habit.toEntity())
+                    database.habitDao().insertHabit(HabitMapper.toEntity(habit))
                 }
             }
         }

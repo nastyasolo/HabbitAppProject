@@ -2,7 +2,8 @@ package com.example.habittrackerapp.data
 
 import android.util.Log
 import com.example.habittrackerapp.data.database.HabitDao
-import com.example.habittrackerapp.data.mapper.toEntity
+import com.example.habittrackerapp.data.mapper.HabitMapper
+
 import com.example.habittrackerapp.domain.model.Habit
 import com.example.habittrackerapp.domain.model.HabitType
 import com.example.habittrackerapp.domain.model.Priority
@@ -54,12 +55,12 @@ class InitialDataProvider(
                     )
 
                     initialHabits.forEach { habit ->
-                        habitDao.insertHabit(habit.toEntity())
+                        habitDao.insertHabit(HabitMapper.toEntity(habit))
                     }
 
-                    Log.d("InitialDataProvider", "✅ Добавлено ${initialHabits.size} начальных привычек")
+                    Log.d("InitialDataProvider", " Добавлено ${initialHabits.size} начальных привычек")
                 } else {
-                    Log.d("InitialDataProvider", "ℹ️ В БД уже есть $count привычек")
+                    Log.d("InitialDataProvider", "ℹ В БД уже есть $count привычек")
                 }
             } catch (e: Exception) {
                 Log.e("InitialDataProvider", "Ошибка при добавлении начальных данных", e)
