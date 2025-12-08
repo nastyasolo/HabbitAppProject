@@ -54,6 +54,12 @@ android {
 }
 
 dependencies {
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+//    // Google Sign-In base
+//    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+//    implementation("androidx.credentials:credentials:1.2.2")
+//    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
+
     // Firebase BOM (версия, совместимая с Kotlin 1.9)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)

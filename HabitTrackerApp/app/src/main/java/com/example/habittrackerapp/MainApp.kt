@@ -1,10 +1,13 @@
 package com.example.habittrackerapp
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,14 +22,64 @@ import com.example.habittrackerapp.ui.screens.SettingsScreen
 import com.example.habittrackerapp.ui.screens.auth.LoginScreen
 import com.example.habittrackerapp.ui.screens.auth.RegisterScreen
 import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
+import com.example.habittrackerapp.ui.viewmodel.AuthViewModel
 
 @Composable
 fun MainApp() {
+    val authViewModel: AuthViewModel = hiltViewModel()
+    val authState by authViewModel.uiState.collectAsState()
+
+    // Главная логика: если авторизован - показываем приложение, если нет - экран входа
+    if (authState.isAuthenticated) {
+        // Пользователь авторизован - показываем основное приложение
+        AuthenticatedApp()
+    } else {
+        // Пользователь не авторизован - показываем экран входа
+        AuthScreen()
+    }
+}
+
+@Composable
+fun AuthScreen() {
+    val navController = rememberNavController()
+    val authViewModel: AuthViewModel = hiltViewModel()
+    val authState by authViewModel.uiState.collectAsState()
+
+    // Если аутентифицировались, AuthScreen сам закроется через MainApp
+    NavHost(
+        navController = navController,
+        startDestination = "login"
+    ) {
+        composable("login") {
+            LoginScreen(
+                onLoginSuccess = {
+                    // Успешный вход обрабатывается через состояние в MainApp
+                },
+                onNavigateToRegister = {
+                    navController.navigate("register")
+                }
+            )
+        }
+
+        composable("register") {
+            RegisterScreen(
+                onRegisterSuccess = {
+                    // Успешная регистрация обрабатывается через состояние в MainApp
+                },
+                onNavigateToLogin = {
+                    navController.popBackStack()
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun AuthenticatedApp() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Определяем, показывать ли нижнюю навигацию
     val showBottomNavigation = when (currentRoute) {
         "habitList", "statistics", "settings" -> true
         else -> false
@@ -40,7 +93,6 @@ fun MainApp() {
                     onItemSelected = { route ->
                         if (route != currentRoute) {
                             navController.navigate(route) {
-                                // Очищаем стек до корня при навигации по нижней панели
                                 popUpTo(navController.graph.startDestinationId) {
                                     saveState = true
                                 }
@@ -100,47 +152,6 @@ fun MainApp() {
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun AuthScreen() {
-    val navController = rememberNavController()
-    val authViewModel: com.example.habittrackerapp.ui.viewmodel.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
-    val authState = authViewModel.uiState.collectAsState().value
-
-    // Если аутентифицирован, выходим из экрана аутентификации
-    LaunchedEffect(authState.isAuthenticated) {
-        if (authState.isAuthenticated) {
-            // Автоматически переключится через AppContent
-        }
-    }
-
-    NavHost(
-        navController = navController,
-        startDestination = "login"
-    ) {
-        composable("login") {
-            LoginScreen(
-                onLoginSuccess = {
-                    // Автоматически переключится через authState
-                },
-                onNavigateToRegister = {
-                    navController.navigate("register")
-                }
-            )
-        }
-
-        composable("register") {
-            RegisterScreen(
-                onRegisterSuccess = {
-                    // Автоматически переключится через authState
-                },
-                onNavigateToLogin = {
-                    navController.popBackStack()
-                }
-            )
         }
     }
 }

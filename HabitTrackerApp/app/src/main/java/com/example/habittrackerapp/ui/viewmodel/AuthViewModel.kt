@@ -1,7 +1,9 @@
 package com.example.habittrackerapp.ui.viewmodel
 
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.habittrackerapp.data.repository.AuthRepositoryImpl
 import com.example.habittrackerapp.domain.AuthState
 import com.example.habittrackerapp.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,17 +49,7 @@ class AuthViewModel @Inject constructor(
             )
 
             val result = authRepository.login(email, password)
-            result.fold(
-                onSuccess = {
-                    // Состояние обновится через Flow
-                },
-                onFailure = { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = error.message ?: "Неизвестная ошибка"
-                    )
-                }
-            )
+            handleAuthResult(result)
         }
     }
 
@@ -69,24 +61,71 @@ class AuthViewModel @Inject constructor(
             )
 
             val result = authRepository.register(email, password, name)
-            result.fold(
-                onSuccess = {
-                    // Состояние обновится через Flow
-                },
-                onFailure = { error ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = error.message ?: "Неизвестная ошибка"
-                    )
-                }
+            handleAuthResult(result)
+        }
+    }
+
+    fun loginWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                error = null
+            )
+
+            val result = authRepository.loginWithGoogle(idToken)
+            handleAuthResult(result)
+        }
+    }
+    fun checkAuthStatus() {
+        viewModelScope.launch {
+            val user = authRepository.getCurrentUser()
+            _uiState.value = _uiState.value.copy(
+                isAuthenticated = user != null,
+                currentUser = user
             )
         }
     }
 
+    // Получаем Intent для Google Sign-In
+    fun getGoogleSignInIntent(): Intent {
+        return (authRepository as AuthRepositoryImpl).getGoogleSignInIntent()
+    }
+
     fun logout() {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true
+            )
+
             authRepository.logout()
+            _uiState.value = _uiState.value.copy(
+                isLoading = false
+            )
         }
+    }
+
+    fun setError(errorMessage: String) {
+        _uiState.value = _uiState.value.copy(
+            isLoading = false,
+            error = errorMessage
+        )
+    }
+
+    private fun handleAuthResult(result: Result<Unit>) {
+        result.fold(
+            onSuccess = {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = null
+                )
+            },
+            onFailure = { error ->
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = error.message ?: "Неизвестная ошибка"
+                )
+            }
+        )
     }
 }
 

@@ -1,12 +1,13 @@
 package com.example.habittrackerapp.data.repository
 
+import android.content.Context
 import com.example.habittrackerapp.domain.AuthState
 import com.example.habittrackerapp.domain.model.User
 import com.example.habittrackerapp.domain.repository.AuthRepository
+import com.example.habittrackerapp.utils.GoogleSignInHelper
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.Firebase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,13 +18,13 @@ import javax.inject.Singleton
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val context: Context
 ) : AuthRepository {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
 
     init {
-        // Слушаем изменения состояния аутентификации
         auth.addAuthStateListener { firebaseAuth ->
             val firebaseUser = firebaseAuth.currentUser
             _authState.value = if (firebaseUser != null) {
@@ -55,18 +56,27 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
 
-            // Сохраняем информацию о пользователе в Firestore
             result.user?.let { firebaseUser ->
-                val userData = hashMapOf(
-                    "email" to email,
-                    "name" to name,
-                    "createdAt" to System.currentTimeMillis()
-                )
+                saveUserToFirestore(firebaseUser.uid, email, name)
+            }
 
-                firestore.collection("users")
-                    .document(firebaseUser.uid)
-                    .set(userData)
-                    .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun loginWithGoogle(idToken: String): Result<Unit> {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            val result = auth.signInWithCredential(credential).await()
+
+            result.user?.let { firebaseUser ->
+                saveUserToFirestore(
+                    firebaseUser.uid,
+                    firebaseUser.email ?: "",
+                    firebaseUser.displayName
+                )
             }
 
             Result.success(Unit)
@@ -76,7 +86,11 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun logout() {
-        auth.signOut()
+        try {
+            auth.signOut()
+        } catch (e: Exception) {
+            // Игнорируем ошибки при выходе
+        }
     }
 
     override suspend fun getCurrentUser(): User? {
@@ -88,5 +102,26 @@ class AuthRepositoryImpl @Inject constructor(
                 name = it.displayName
             )
         }
+    }
+
+    // Новый метод для получения Google Sign-In Intent
+    fun getGoogleSignInIntent(): android.content.Intent {
+        val webClientId = context.getString(com.example.habittrackerapp.R.string.default_web_client_id)
+        val client = GoogleSignInHelper.getGoogleSignInClient(context, webClientId)
+        return GoogleSignInHelper.getGoogleSignInIntent(client)
+    }
+
+    private suspend fun saveUserToFirestore(userId: String, email: String, name: String?) {
+        val userData = hashMapOf(
+            "email" to email,
+            "name" to name,
+            "createdAt" to System.currentTimeMillis(),
+            "lastLogin" to System.currentTimeMillis()
+        )
+
+        firestore.collection("users")
+            .document(userId)
+            .set(userData)
+            .await()
     }
 }

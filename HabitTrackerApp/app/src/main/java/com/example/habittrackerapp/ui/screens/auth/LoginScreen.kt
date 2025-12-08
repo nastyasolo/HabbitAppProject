@@ -1,5 +1,7 @@
 package com.example.habittrackerapp.ui.screens.auth
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -8,10 +10,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.habittrackerapp.ui.components.GoogleSignInButton
 import com.example.habittrackerapp.ui.viewmodel.AuthViewModel
+import com.example.habittrackerapp.utils.GoogleSignInHelper
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -19,15 +27,46 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
 
-    // Перенаправляем на главный экран при успешной аутентификации
-    LaunchedEffect(uiState.isAuthenticated) {
-        if (uiState.isAuthenticated) {
-            onLoginSuccess()
+    // Google Sign-In launcher
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        coroutineScope.launch {
+            try {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                val account = GoogleSignInHelper.handleSignInResult(task)
+
+                if (account != null) {
+                    val idToken = account.idToken
+                    if (idToken != null) {
+                        viewModel.loginWithGoogle(idToken)
+                    } else {
+                        viewModel.setError("Не удалось получить токен Google")
+                    }
+                } else {
+                    viewModel.setError("Ошибка входа через Google")
+                }
+            } catch (e: Exception) {
+                viewModel.setError("Ошибка: ${e.message}")
+            }
         }
+    }
+
+    // Перенаправляем на главный экран при успешной авторизации
+    LaunchedEffect(uiState.isAuthenticated) {
+        if (uiState.isAuthenticated) onLoginSuccess()
+    }
+
+    fun launchGoogleSignIn() {
+        val intent = viewModel.getGoogleSignInIntent()
+        googleSignInLauncher.launch(intent)
     }
 
     Column(
@@ -109,6 +148,14 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                GoogleSignInButton(
+                    onClick = { launchGoogleSignIn() },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.isLoading
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 TextButton(
                     onClick = onNavigateToRegister,
                     modifier = Modifier.fillMaxWidth()
@@ -119,4 +166,3 @@ fun LoginScreen(
         }
     }
 }
-
