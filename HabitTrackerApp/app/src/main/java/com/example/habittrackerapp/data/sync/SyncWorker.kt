@@ -15,7 +15,8 @@ class SyncWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         return try {
-            val result = syncUseCases.syncPendingHabits()
+            // Синхронизируем и привычки, и историю выполнения
+            val result = syncUseCases.syncHabits()
             when (result) {
                 is com.example.habittrackerapp.domain.model.SyncResult.Success -> Result.success()
                 is com.example.habittrackerapp.domain.model.SyncResult.Error -> Result.failure()

@@ -1,34 +1,48 @@
 package com.example.habittrackerapp.data.database
 
+
 import androidx.room.TypeConverter
-import com.example.habittrackerapp.data.model.HabitType
-import com.example.habittrackerapp.data.model.Priority
+import com.example.habittrackerapp.domain.model.DayOfWeek
+
 import com.example.habittrackerapp.domain.model.SyncStatus
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class Converters {
-    @TypeConverter
-    fun fromHabitType(habitType: HabitType): String {
-        return habitType.name
-    }
+    private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    private val gson = Gson()
 
-    @TypeConverter
-    fun toHabitType(value: String): HabitType {
-        return HabitType.valueOf(value)
-    }
 
-    @TypeConverter
-    fun fromPriority(priority: Priority): String {
-        return priority.name
-    }
-
-    @TypeConverter
-    fun toPriority(value: String): Priority {
-        return Priority.valueOf(value)
-    }
     @TypeConverter
     fun fromSyncStatus(status: SyncStatus): String = status.name
 
     @TypeConverter
     fun toSyncStatus(name: String): SyncStatus = SyncStatus.valueOf(name)
+
+    @TypeConverter
+    fun fromLocalDate(date: LocalDate?): String? {
+        return date?.format(dateFormatter)
+    }
+
+    @TypeConverter
+    fun toLocalDate(dateString: String?): LocalDate? {
+        return dateString?.let { LocalDate.parse(it, dateFormatter) }
+    }
+
+    @TypeConverter
+    fun fromDayOfWeekList(days: List<DayOfWeek>): String {
+        return gson.toJson(days.map { it.name })
+    }
+
+    @TypeConverter
+    fun toDayOfWeekList(json: String): List<DayOfWeek> {
+        if (json.isEmpty()) return emptyList()
+        val type = object : TypeToken<List<String>>() {}.type
+        val stringList: List<String> = gson.fromJson(json, type)
+        return stringList.map { DayOfWeek.valueOf(it) }
+    }
+
 
 }

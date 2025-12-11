@@ -55,6 +55,7 @@ android {
 
 dependencies {
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation ("com.google.code.gson:gson:2.10.1")
 //    // Google Sign-In base
 //    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
 //    implementation("androidx.credentials:credentials:1.2.2")

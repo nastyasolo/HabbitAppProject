@@ -22,7 +22,6 @@ class HabitListViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // Даем небольшую задержку чтобы база успела инициализироваться
             delay(100)
             loadHabits()
         }
@@ -67,7 +66,6 @@ class HabitListViewModel @Inject constructor(
     }
 }
 
-// Выносим классы за пределы ViewModel
 data class HabitListState(
     val habits: List<Habit> = emptyList(),
     val isLoading: Boolean = true,

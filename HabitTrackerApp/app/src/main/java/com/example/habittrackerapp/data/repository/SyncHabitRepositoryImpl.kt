@@ -1,114 +1,133 @@
 package com.example.habittrackerapp.data.repository
 
+import com.example.habittrackerapp.data.database.HabitCompletionDao
 import com.example.habittrackerapp.data.database.HabitDao
 import com.example.habittrackerapp.data.mapper.FirestoreHabitMapper
+import com.example.habittrackerapp.data.mapper.HabitCompletionMapper
 import com.example.habittrackerapp.data.mapper.HabitMapper
-import com.example.habittrackerapp.data.mapper.toDomain
-import com.example.habittrackerapp.data.mapper.toEntity
 import com.example.habittrackerapp.data.remote.HabitRemoteDataSource
-import com.example.habittrackerapp.domain.model.Habit
-import com.example.habittrackerapp.domain.model.SyncStatus
+import com.example.habittrackerapp.domain.model.*
 import com.example.habittrackerapp.domain.repository.AuthRepository
 import com.example.habittrackerapp.domain.repository.HabitRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class SyncHabitRepositoryImpl @Inject constructor(
-    private val localDataSource: HabitDao,
+    private val habitDao: HabitDao,
+    private val completionDao: HabitCompletionDao,
     private val remoteDataSource: HabitRemoteDataSource,
     private val authRepository: AuthRepository
 ) : HabitRepository {
 
+    private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+
     override fun getAllHabits(): Flow<List<Habit>> {
-        return localDataSource.getAllHabits().map { habits ->
-            habits.map { it.toDomain() }
+        return habitDao.getAllHabits().map { habits ->
+            habits.map { HabitMapper.toDomain(it) }
         }
     }
 
+    override suspend fun getHabitWithCompletions(id: String): HabitWithCompletions? {
+        val habit = habitDao.getHabitById(id) ?: return null
+        val completions = completionDao.getCompletionsForHabitSimple(id)
+
+        return HabitWithCompletions(
+            habit = HabitMapper.toDomain(habit),
+            completions = completions.map { HabitCompletionMapper.toDomain(it) }
+        )
+    }
+
     override suspend fun getHabitById(id: String): Habit? {
-        return localDataSource.getHabitById(id)?.let { it.toDomain() }
+        return habitDao.getHabitById(id)?.let { HabitMapper.toDomain(it) }
     }
 
     override suspend fun insertHabit(habit: Habit) {
         // Сохраняем локально
-        val entity = habit.toEntity().copy(syncStatus = SyncStatus.PENDING.name)
-        localDataSource.insertHabit(entity)
+        val entity = HabitMapper.toEntity(habit)
+        habitDao.insertHabit(entity)
 
-        // Пытаемся синхронизировать с сервером
+        // Синхронизируем с сервером
         authRepository.getCurrentUser()?.let { user ->
             val firestoreHabit = FirestoreHabitMapper.toFirestoreHabit(habit, user.id)
-            val result = remoteDataSource.saveHabit(firestoreHabit)
-
-            if (result.isSuccess) {
-                // Помечаем как синхронизированную
-                markHabitAsSynced(habit.id)
-            }
+            remoteDataSource.saveHabit(firestoreHabit)
+            habitDao.updateHabitSyncStatus(habit.id, SyncStatus.SYNCED.name, System.currentTimeMillis())
         }
     }
 
     override suspend fun updateHabit(habit: Habit) {
-        // Обновляем локально
-        val entity = habit.toEntity().copy(syncStatus = SyncStatus.PENDING.name)
-        localDataSource.updateHabit(entity)
+        val entity = HabitMapper.toEntity(habit).copy(syncStatus = SyncStatus.PENDING.name)
+        habitDao.updateHabit(entity)
 
-        // Пытаемся синхронизировать с сервером
         authRepository.getCurrentUser()?.let { user ->
             val firestoreHabit = FirestoreHabitMapper.toFirestoreHabit(habit, user.id)
             remoteDataSource.updateHabit(firestoreHabit)
-
-            // Помечаем как синхронизированную
-            markHabitAsSynced(habit.id)
+            habitDao.updateHabitSyncStatus(habit.id, SyncStatus.SYNCED.name, System.currentTimeMillis())
         }
     }
 
     override suspend fun deleteHabit(habit: Habit) {
-        // Удаляем локально
-        localDataSource.deleteHabit(habit.toEntity())
+        habitDao.deleteHabit(HabitMapper.toEntity(habit))
 
-        // Пытаемся удалить с сервера
         authRepository.getCurrentUser()?.let { user ->
             remoteDataSource.deleteHabit(habit.id, user.id)
         }
     }
 
     override suspend fun toggleHabitCompletion(id: String) {
-        val habitEntity = localDataSource.getHabitById(id)
-        habitEntity?.let {
-            val updatedHabit = it.copy(
-                isCompleted = !it.isCompleted,
-                streak = if (!it.isCompleted) it.streak + 1 else it.streak,
-                lastCompleted = if (!it.isCompleted) System.currentTimeMillis() else null
+        val today = LocalDate.now()
+        val todayString = today.format(dateFormatter)
+
+        // Проверяем, есть ли запись за сегодня
+        val existingCompletion = completionDao.getCompletionByDate(id, todayString)
+
+        if (existingCompletion != null) {
+            // Отмена выполнения - удаляем запись
+            completionDao.deleteCompletion(existingCompletion)
+        } else {
+            // Создаем новую запись о выполнении
+            val completion = HabitCompletion(
+                habitId = id,
+                date = today,
+                completed = true,
+                completedAt = System.currentTimeMillis()
             )
-            localDataSource.updateHabit(updatedHabit)
+            completionDao.insertCompletion(HabitCompletionMapper.toEntity(completion))
+        }
 
-            // Обновляем на сервере
-            authRepository.getCurrentUser()?.let { user ->
-                val domainHabit = updatedHabit.toDomain()
-                val firestoreHabit = FirestoreHabitMapper.toFirestoreHabit(domainHabit, user.id)
-                val result = remoteDataSource.updateHabit(firestoreHabit)
+        // Пересчитываем стрик
+        recalculateStreak(id)
 
-                if (result.isSuccess) {
-                    // Помечаем как синхронизированную
-                    localDataSource.updateHabit(
-                        updatedHabit.copy(
-                            syncStatus = SyncStatus.SYNCED.name,
-                            lastSynced = System.currentTimeMillis()
-                        )
-                    )
-                }
+        // Синхронизируем с сервером
+        authRepository.getCurrentUser()?.let { user ->
+            if (existingCompletion != null) {
+                // Удаляем запись с сервера
+                remoteDataSource.deleteCompletion(existingCompletion.id, user.id, id)
+            } else {
+                // Сохраняем новую запись
+                val firestoreCompletion = FirestoreHabitMapper.toFirestoreCompletion(
+                    HabitCompletion(
+                        habitId = id,
+                        date = today,
+                        completed = true
+                    ),
+                    user.id
+                )
+                remoteDataSource.saveCompletion(firestoreCompletion)
             }
         }
     }
 
     override suspend fun getTodayHabits(): List<Habit> {
-        val habits = localDataSource.getAllHabitsSimple()
-        return habits.map { it.toDomain() }
+        val habits = habitDao.getAllHabitsSimple()
+        return habits.map { HabitMapper.toDomain(it) }
     }
 
     override suspend fun getWeeklyHabits(): List<Habit> {
-        val habits = localDataSource.getAllHabitsSimple()
-        return habits.map { it.toDomain() }
+        val habits = habitDao.getAllHabitsSimple()
+        return habits.filter { it.type == "WEEKLY" }.map { HabitMapper.toDomain(it) }
     }
 
     override suspend fun syncHabits(): Boolean {
@@ -120,50 +139,57 @@ class SyncHabitRepositoryImpl @Inject constructor(
             if (remoteHabitsResult.isSuccess) {
                 val remoteHabits = remoteHabitsResult.getOrThrow()
 
-                // Преобразуем в Domain модели
-                val domainHabits = remoteHabits.map { FirestoreHabitMapper.toDomainHabit(it) }
-
-                // Получаем локальные привычки
-                val localHabits = localDataSource.getAllHabitsSimple()
-
-                // Логика слияния
-                domainHabits.forEach { remoteHabit ->
-                    val localHabit = localHabits.find { it.id == remoteHabit.id }
+                // Синхронизируем привычки
+                remoteHabits.forEach { remoteHabit ->
+                    val localHabit = habitDao.getHabitById(remoteHabit.id)
+                    val domainHabit = FirestoreHabitMapper.toDomainHabit(remoteHabit)
 
                     if (localHabit == null) {
-                        // Добавляем новую привычку
-                        localDataSource.insertHabit(
-                            remoteHabit.toEntity()
-                        )
+                        habitDao.insertHabit(HabitMapper.toEntity(domainHabit))
                     } else {
-                        // Сравниваем временные метки
+                        // Логика разрешения конфликтов по времени
                         val localUpdated = localHabit.lastSynced ?: localHabit.createdAt
-                        val remoteUpdated = remoteHabit.lastCompleted ?: remoteHabit.createdAt
+                        val remoteUpdated = remoteHabit.lastCompleted?.let {
+                            try {
+                                LocalDate.parse(it).toEpochDay() * 1000
+                            } catch (e: Exception) {
+                                remoteHabit.createdAt
+                            }
+                        } ?: remoteHabit.createdAt
 
                         if (remoteUpdated > localUpdated) {
-                            // Обновляем локальную версию
-                            localDataSource.updateHabit(
-                                remoteHabit.toEntity()
+                            habitDao.updateHabit(HabitMapper.toEntity(domainHabit))
+                        }
+                    }
+
+                    // Синхронизируем историю выполнения
+                    val completionsResult = remoteDataSource.getCompletions(user.id, remoteHabit.id)
+                    if (completionsResult.isSuccess) {
+                        val remoteCompletions = completionsResult.getOrThrow()
+                        remoteCompletions.forEach { remoteCompletion ->
+                            val localCompletion = completionDao.getCompletionByDate(
+                                remoteHabit.id,
+                                remoteCompletion.date
                             )
+
+                            if (localCompletion == null) {
+                                val domainCompletion = FirestoreHabitMapper.toDomainCompletion(remoteCompletion)
+                                completionDao.insertCompletion(HabitCompletionMapper.toEntity(domainCompletion))
+                            }
                         }
                     }
                 }
 
-                // Отправляем на сервер привычки, которых там нет
-                val pendingHabits = getPendingHabits()
-                pendingHabits.forEach { habit ->
-                    val firestoreHabit = FirestoreHabitMapper.toFirestoreHabit(habit, user.id)
-                    remoteDataSource.saveHabit(firestoreHabit)
-
-                    // Помечаем как синхронизированную
-                    markHabitAsSynced(habit.id)
-                }
+                // Отправляем локальные изменения на сервер
+                syncPendingHabits()
+                syncPendingCompletions()
 
                 true
             } else {
                 false
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             false
         }
     }
@@ -171,14 +197,19 @@ class SyncHabitRepositoryImpl @Inject constructor(
     override suspend fun syncPendingHabits(): Boolean {
         return try {
             val user = authRepository.getCurrentUser() ?: return false
-            val pendingHabits = getPendingHabits()
+            val pendingHabits = habitDao.getPendingHabits()
 
             pendingHabits.forEach { habit ->
-                val firestoreHabit = FirestoreHabitMapper.toFirestoreHabit(habit, user.id)
+                val domainHabit = HabitMapper.toDomain(habit)
+                val firestoreHabit = FirestoreHabitMapper.toFirestoreHabit(domainHabit, user.id)
                 val result = remoteDataSource.saveHabit(firestoreHabit)
 
                 if (result.isSuccess) {
-                    markHabitAsSynced(habit.id)
+                    habitDao.updateHabitSyncStatus(
+                        habit.id,
+                        SyncStatus.SYNCED.name,
+                        System.currentTimeMillis()
+                    )
                 }
             }
 
@@ -189,20 +220,85 @@ class SyncHabitRepositoryImpl @Inject constructor(
     }
 
     override suspend fun markHabitAsSynced(habitId: String) {
-        localDataSource.getHabitById(habitId)?.let { habit ->
-            localDataSource.updateHabit(
-                habit.copy(
-                    syncStatus = SyncStatus.SYNCED.name,
-                    lastSynced = System.currentTimeMillis()
-                )
-            )
-        }
+        habitDao.updateHabitSyncStatus(habitId, SyncStatus.SYNCED.name, System.currentTimeMillis())
     }
 
     override suspend fun getPendingHabits(): List<Habit> {
-        val habits = localDataSource.getAllHabitsSimple()
-        return habits
-            .filter { it.syncStatus == SyncStatus.PENDING.name }
-            .map { it.toDomain() }
+        return habitDao.getPendingHabits().map { HabitMapper.toDomain(it) }
+    }
+
+    override suspend fun getHabitCompletions(habitId: String): List<com.example.habittrackerapp.domain.model.HabitCompletion> {
+        return completionDao.getCompletionsForHabitSimple(habitId).map { HabitCompletionMapper.toDomain(it) }
+    }
+
+    override suspend fun addCompletion(completion: com.example.habittrackerapp.domain.model.HabitCompletion) {
+        completionDao.insertCompletion(HabitCompletionMapper.toEntity(completion))
+        recalculateStreak(completion.habitId)
+    }
+
+    override suspend fun removeCompletion(completion: com.example.habittrackerapp.domain.model.HabitCompletion) {
+        completionDao.deleteCompletion(HabitCompletionMapper.toEntity(completion))
+        recalculateStreak(completion.habitId)
+    }
+
+    private suspend fun recalculateStreak(habitId: String) {
+        val completions = completionDao.getCompletedDatesSimple(habitId)
+        val habit = habitDao.getHabitById(habitId) ?: return
+
+        var currentStreak = 0
+        var longestStreak = habit.longestStreak
+        var currentDate = LocalDate.now()
+        val sortedDates = completions
+            .mapNotNull { dateStr ->
+                try {
+                    LocalDate.parse(dateStr)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            .sortedDescending()
+
+        for (completionDate in sortedDates) {
+            if (completionDate == currentDate ||
+                (currentStreak == 0 && completionDate == currentDate.minusDays(1))) {
+                currentStreak++
+                currentDate = currentDate.minusDays(1)
+            } else {
+                break
+            }
+        }
+
+        if (currentStreak > longestStreak) {
+            longestStreak = currentStreak
+            habitDao.updateLongestStreak(habitId, longestStreak)
+        }
+
+        val lastCompleted = sortedDates.firstOrNull()?.format(dateFormatter)
+        habitDao.updateHabitStreak(habitId, currentStreak, lastCompleted)
+    }
+
+    private suspend fun syncPendingCompletions(): Boolean {
+        return try {
+            val user = authRepository.getCurrentUser() ?: return false
+            val pendingCompletions = completionDao.getPendingCompletions()
+
+            pendingCompletions.forEach { completion ->
+                val domainCompletion = HabitCompletionMapper.toDomain(completion)
+                val firestoreCompletion = FirestoreHabitMapper.toFirestoreCompletion(domainCompletion, user.id)
+                val result = remoteDataSource.saveCompletion(firestoreCompletion)
+
+                if (result.isSuccess) {
+                    completionDao.updateCompletionSyncStatus(
+                        completion.id,
+                        SyncStatus.SYNCED.name,
+                        System.currentTimeMillis()
+                    )
+                }
+            }
+
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 }

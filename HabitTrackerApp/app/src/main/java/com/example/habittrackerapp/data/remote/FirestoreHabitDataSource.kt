@@ -1,5 +1,6 @@
 package com.example.habittrackerapp.data.remote
 
+import com.example.habittrackerapp.data.remote.model.FirestoreCompletion
 import com.example.habittrackerapp.data.remote.model.FirestoreHabit
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.snapshots
@@ -73,5 +74,52 @@ class FirestoreHabitDataSource @Inject constructor(
                     document.toObject(FirestoreHabit::class.java)
                 }
             }
+    }
+
+    // Реализация новых методов для истории выполнения
+    override suspend fun saveCompletion(completion: FirestoreCompletion): Result<Unit> {
+        return try {
+            firestore.collection("habits")
+                .document(completion.habitId)
+                .collection("history")
+                .document(completion.id)
+                .set(completion)
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getCompletions(userId: String, habitId: String): Result<List<FirestoreCompletion>> {
+        return try {
+            val snapshot = firestore.collection("habits")
+                .document(habitId)
+                .collection("history")
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+
+            val completions = snapshot.documents.mapNotNull { document ->
+                document.toObject(FirestoreCompletion::class.java)
+            }
+            Result.success(completions)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteCompletion(completionId: String, userId: String, habitId: String): Result<Unit> {
+        return try {
+            firestore.collection("habits")
+                .document(habitId)
+                .collection("history")
+                .document(completionId)
+                .delete()
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

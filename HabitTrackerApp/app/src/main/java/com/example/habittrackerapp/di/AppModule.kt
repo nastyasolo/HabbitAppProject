@@ -3,6 +3,7 @@ package com.example.habittrackerapp.di
 import android.content.Context
 
 import com.example.habittrackerapp.data.database.AppDatabase
+import com.example.habittrackerapp.data.database.HabitCompletionDao
 import com.example.habittrackerapp.data.database.HabitDao
 import com.example.habittrackerapp.data.repository.AuthRepositoryImpl
 import com.example.habittrackerapp.data.repository.SyncHabitRepositoryImpl
@@ -32,7 +33,10 @@ object AppModule {
         return database.habitDao()
     }
 
-
+    @Provides
+    fun provideHabitCompletionDao(appDatabase: AppDatabase): HabitCompletionDao {
+        return appDatabase.habitCompletionDao()
+    }
 
     @Provides
     @Singleton

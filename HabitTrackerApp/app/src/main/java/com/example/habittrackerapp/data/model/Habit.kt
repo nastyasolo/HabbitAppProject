@@ -2,7 +2,6 @@ package com.example.habittrackerapp.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.example.habittrackerapp.domain.model.SyncStatus
 
 @Entity(tableName = "habits")
 data class Habit(
@@ -10,32 +9,32 @@ data class Habit(
     val id: String,
     val name: String,
     val description: String = "",
-    val type: String = "DAILY",  // Изменяем HabitType -> String
-    val streak: Int = 0,
-    val isCompleted: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis(),
+    val type: String = "DAILY",
+    val priority: String = "MEDIUM",
     val reminderTime: String? = null,
-    val priority: String = "MEDIUM",  // Изменяем Priority -> String
+    val targetDays: String = "",  // JSON список дней для WEEKLY
     val category: String = "General",
-    val lastCompleted: Long? = null,
-    val syncStatus: String = SyncStatus.PENDING.name,  // Добавляем syncStatus как String
-    val lastSynced: Long? = null  // Добавляем lastSynced
+    val createdAt: Long = System.currentTimeMillis(),
+    // Кэшированные поля (вычисляются из истории)
+    val lastCompleted: String? = null,  // Формат: "2024-12-11"
+    val currentStreak: Int = 0,
+    val longestStreak: Int = 0,
+    val syncStatus: String = "PENDING",
+    val lastSynced: Long? = null
 )
 
-// Эти enum'ы нужно вынести в domain слой, но оставим пока здесь
-// Вместо этого, удалите отсюда HabitType и Priority, они должны быть в domain
 
-enum class HabitType {
-    DAILY {
-        override val displayName: String get() = "Ежедневная"
-    },
-    WEEKLY {
-        override val displayName: String get() = "Еженедельная"
-    };
-
-    abstract val displayName: String
-}
-
-enum class Priority {
-    LOW, MEDIUM, HIGH
-}
+//enum class HabitType {
+//    DAILY {
+//        override val displayName: String get() = "Ежедневная"
+//    },
+//    WEEKLY {
+//        override val displayName: String get() = "Еженедельная"
+//    };
+//
+//    abstract val displayName: String
+//}
+//
+//enum class Priority {
+//    LOW, MEDIUM, HIGH
+//}

@@ -1,44 +1,26 @@
 package com.example.habittrackerapp.data.remote.model
 
-import com.google.firebase.firestore.PropertyName
-
 data class FirestoreHabit(
-    @PropertyName("id")
     val id: String = "",
-
-    @PropertyName("userId")
     val userId: String = "",
-
-    @PropertyName("name")
     val name: String = "",
-
-    @PropertyName("description")
     val description: String = "",
-
-    @PropertyName("type")
     val type: String = "DAILY",
-
-    @PropertyName("priority")
     val priority: String = "MEDIUM",
-
-    @PropertyName("reminderTime")
     val reminderTime: String? = null,
-
-    @PropertyName("isCompleted")
-    val isCompleted: Boolean = false,
-
-    @PropertyName("streak")
-    val streak: Int = 0,
-
-    @PropertyName("category")
+    val targetDays: List<String> = emptyList(),
     val category: String = "General",
-
-    @PropertyName("createdAt")
     val createdAt: Long = System.currentTimeMillis(),
+    val lastCompleted: String? = null,
+    val currentStreak: Int = 0,
+    val longestStreak: Int = 0
+)
 
-    @PropertyName("updatedAt")
-    val updatedAt: Long = System.currentTimeMillis(),
-
-    @PropertyName("lastCompleted")
-    val lastCompleted: Long? = null
+data class FirestoreCompletion(
+    val id: String = "",
+    val habitId: String = "",
+    val userId: String = "",
+    val date: String = "",  // "2024-12-11"
+    val completed: Boolean = true,
+    val completedAt: Long = System.currentTimeMillis()
 )

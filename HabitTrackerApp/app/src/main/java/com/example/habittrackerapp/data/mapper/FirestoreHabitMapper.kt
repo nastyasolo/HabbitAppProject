@@ -1,12 +1,14 @@
 package com.example.habittrackerapp.data.mapper
 
+import com.example.habittrackerapp.data.remote.model.FirestoreCompletion
 import com.example.habittrackerapp.data.remote.model.FirestoreHabit
-import com.example.habittrackerapp.domain.model.Habit
-import com.example.habittrackerapp.domain.model.HabitType
-import com.example.habittrackerapp.domain.model.Priority
-import com.example.habittrackerapp.domain.model.SyncStatus
+import com.example.habittrackerapp.domain.model.*
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 object FirestoreHabitMapper {
+
+    private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
     fun toFirestoreHabit(habit: Habit, userId: String): FirestoreHabit {
         return FirestoreHabit(
@@ -17,11 +19,12 @@ object FirestoreHabitMapper {
             type = habit.type.name,
             priority = habit.priority.name,
             reminderTime = habit.reminderTime,
-            isCompleted = habit.isCompleted,
-            streak = habit.streak,
+            targetDays = habit.targetDays.map { it.name },
             category = habit.category,
             createdAt = habit.createdAt,
-            lastCompleted = habit.lastCompleted
+            lastCompleted = habit.lastCompleted?.format(dateFormatter),
+            currentStreak = habit.currentStreak,
+            longestStreak = habit.longestStreak
         )
     }
 
@@ -33,13 +36,35 @@ object FirestoreHabitMapper {
             type = HabitType.valueOf(firestoreHabit.type),
             priority = Priority.valueOf(firestoreHabit.priority),
             reminderTime = firestoreHabit.reminderTime,
-            isCompleted = firestoreHabit.isCompleted,
-            streak = firestoreHabit.streak,
-            category = firestoreHabit.category ?: "General",
+            targetDays = firestoreHabit.targetDays.map { DayOfWeek.valueOf(it) },
             createdAt = firestoreHabit.createdAt,
-            lastCompleted = firestoreHabit.lastCompleted,
-            syncStatus = SyncStatus.SYNCED,
-            lastSynced = System.currentTimeMillis()
+            category = firestoreHabit.category,
+            lastCompleted = firestoreHabit.lastCompleted?.let { LocalDate.parse(it, dateFormatter) },
+            currentStreak = firestoreHabit.currentStreak,
+            longestStreak = firestoreHabit.longestStreak,
+            syncStatus = SyncStatus.SYNCED
+        )
+    }
+
+    fun toFirestoreCompletion(completion: HabitCompletion, userId: String): FirestoreCompletion {
+        return FirestoreCompletion(
+            id = completion.id,
+            habitId = completion.habitId,
+            userId = userId,
+            date = completion.date.format(dateFormatter),
+            completed = completion.completed,
+            completedAt = completion.completedAt
+        )
+    }
+
+    fun toDomainCompletion(firestoreCompletion: FirestoreCompletion): HabitCompletion {
+        return HabitCompletion(
+            id = firestoreCompletion.id,
+            habitId = firestoreCompletion.habitId,
+            date = LocalDate.parse(firestoreCompletion.date, dateFormatter),
+            completed = firestoreCompletion.completed,
+            completedAt = firestoreCompletion.completedAt,
+            syncStatus = SyncStatus.SYNCED
         )
     }
 }

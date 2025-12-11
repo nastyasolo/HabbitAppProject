@@ -4,19 +4,20 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.example.habittrackerapp.data.model.Habit
-import com.example.habittrackerapp.data.database.HabitDao
 import android.content.Context
+import com.example.habittrackerapp.data.model.Habit
+import com.example.habittrackerapp.data.model.HabitCompletion
 
 @Database(
-    entities = [Habit::class],
-    version = 2,  //
+    entities = [Habit::class, HabitCompletion::class],
+    version = 1,  // Начнем с версии 1 для чистого старта
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun habitDao(): HabitDao
+    abstract fun habitCompletionDao(): HabitCompletionDao
 
     companion object {
         @Volatile
@@ -29,7 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "habit_database"
                 )
-                    .fallbackToDestructiveMigration()  // Временное решение для миграции
+                    .fallbackToDestructiveMigration()
                     .build()
                     .also { Instance = it }
             }

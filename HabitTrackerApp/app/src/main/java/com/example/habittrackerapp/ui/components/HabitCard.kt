@@ -1,7 +1,5 @@
 package com.example.habittrackerapp.ui.components
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,7 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,41 +25,32 @@ import com.example.habittrackerapp.domain.model.Habit
 import com.example.habittrackerapp.domain.model.HabitType
 import com.example.habittrackerapp.domain.model.Priority
 import com.example.habittrackerapp.ui.theme.*
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HabitCard(
     habit: Habit,
+    isCompletedToday: Boolean, // Передаем состояние выполнения сегодня из ViewModel
     onToggleCompletion: () -> Unit,
     onCardClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Анимация прогресса
-    val progress = habit.streak.coerceAtLeast(0).toFloat()
-    val animatedProgress = animateFloatAsState(
-        targetValue = progress,
-        label = "progressAnimation"
-    )
-
     Card(
         onClick = onCardClick,
         modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        shape = RoundedCornerShape(20.dp),
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
         ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            pressedElevation = 8.dp
-        )
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(16.dp)
         ) {
             // Первая строка: название + чекбокс
             Row(
@@ -72,7 +61,7 @@ fun HabitCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = habit.name,
-                        style = MaterialTheme.typography.titleLarge.copy(
+                        style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         ),
@@ -80,7 +69,6 @@ fun HabitCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-
                     if (habit.description.isNotBlank()) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -92,10 +80,9 @@ fun HabitCard(
                         )
                     }
                 }
-
-                // Красивый чекбокс
+                // Чекбокс
                 Checkbox(
-                    checked = habit.isCompleted,
+                    checked = isCompletedToday,
                     onCheckedChange = { onToggleCompletion() },
                     colors = CheckboxDefaults.colors(
                         checkedColor = MaterialTheme.colorScheme.primary,
@@ -106,7 +93,7 @@ fun HabitCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Вторая строка: метки
             Row(
@@ -119,7 +106,6 @@ fun HabitCard(
                     color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f),
                     textColor = MaterialTheme.colorScheme.onSecondaryContainer
                 )
-
                 // Приоритет
                 Chip(
                     text = habit.priority.displayName,
@@ -137,52 +123,43 @@ fun HabitCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Третья строка: прогресс стрика
+            // Третья строка: стрик
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Прогресс бар
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                // Информация о стрике
+                Column {
+                    Text(
+                        text = "Текущий стрик:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            text = "Стрик:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "${habit.streak} дней",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            text = "${habit.currentStreak}",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 24.sp
+                            ),
                             color = MaterialTheme.colorScheme.primary
                         )
+                        Text(
+                            text = " дней",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 4.dp, start = 2.dp)
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    // Прогресс бар
-                    LinearProgressIndicator(
-                        progress = animatedProgress.value / 21f, // 21 день для формирования привычки
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(CircleShape),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
                 }
-
-                Spacer(modifier = Modifier.width(12.dp))
 
                 // Кружок с числом стрика
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(42.dp)
                         .clip(CircleShape)
                         .background(
                             Brush.linearGradient(
@@ -194,20 +171,27 @@ fun HabitCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = habit.streak.toString(),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = habit.currentStreak.toString(),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Text(
+                            text = "дн",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
 
             // Напоминание (если есть)
             habit.reminderTime?.let { reminderTime ->
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -216,9 +200,9 @@ fun HabitCard(
                         imageVector = Icons.Default.Notifications,
                         contentDescription = "Напоминание",
                         tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "Напоминание: $reminderTime",
                         style = MaterialTheme.typography.labelSmall,
@@ -249,7 +233,7 @@ fun Chip(
             )
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             icon?.let {
@@ -287,10 +271,11 @@ fun HabitCardPreview_Light() {
                     description = "10 минут медитации каждое утро для ясности ума",
                     type = HabitType.DAILY,
                     priority = Priority.HIGH,
-                    streak = 14,
-                    isCompleted = true,
+                    currentStreak = 14,
+                    lastCompleted = LocalDate.now(),
                     reminderTime = "08:00"
                 ),
+                isCompletedToday = true,
                 onToggleCompletion = {},
                 onCardClick = {}
             )
@@ -315,10 +300,11 @@ fun HabitCardPreview_Dark() {
                     description = "Читать 30 минут перед сном для саморазвития",
                     type = HabitType.DAILY,
                     priority = Priority.MEDIUM,
-                    streak = 7,
-                    isCompleted = false,
+                    currentStreak = 7,
+                    lastCompleted = null,
                     reminderTime = "22:00"
                 ),
+                isCompletedToday = false,
                 onToggleCompletion = {},
                 onCardClick = {}
             )

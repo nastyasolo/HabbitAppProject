@@ -1,6 +1,7 @@
 package com.example.habittrackerapp.domain.usecase
 
 import com.example.habittrackerapp.domain.model.Habit
+import com.example.habittrackerapp.domain.model.HabitWithCompletions
 import com.example.habittrackerapp.domain.repository.HabitRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -15,6 +16,12 @@ class GetHabitByIdUseCase @Inject constructor(
     private val repository: HabitRepository
 ) {
     suspend operator fun invoke(id: String): Habit? = repository.getHabitById(id)
+}
+
+class GetHabitWithCompletionsUseCase @Inject constructor(
+    private val repository: HabitRepository
+) {
+    suspend operator fun invoke(id: String): HabitWithCompletions? = repository.getHabitWithCompletions(id)
 }
 
 class InsertHabitUseCase @Inject constructor(
@@ -45,4 +52,10 @@ class GetTodayHabitsUseCase @Inject constructor(
     private val repository: HabitRepository
 ) {
     suspend operator fun invoke(): List<Habit> = repository.getTodayHabits()
+}
+
+class GetHabitCompletionsUseCase @Inject constructor(
+    private val repository: HabitRepository
+) {
+    suspend operator fun invoke(habitId: String) = repository.getHabitCompletions(habitId)
 }

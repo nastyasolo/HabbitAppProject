@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,6 +22,7 @@ import com.example.habittrackerapp.ui.components.HabitCard
 import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
 import com.example.habittrackerapp.ui.viewmodel.HabitListEvent
 import com.example.habittrackerapp.ui.viewmodel.HabitListViewModel
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,7 +31,7 @@ fun HabitListScreen(
     onHabitClick: (String) -> Unit,
     viewModel: HabitListViewModel = hiltViewModel()
 ) {
-    val state = viewModel.state.collectAsState().value
+    val state by viewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.onEvent(HabitListEvent.Reload)
@@ -52,7 +54,6 @@ fun HabitListScreen(
             )
         },
         floatingActionButton = {
-            // Используем простую FAB без Extended
             FloatingActionButton(
                 onClick = onAddHabitClick,
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -93,8 +94,7 @@ fun HabitListScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        // Используем androidx.compose.material3.Button
-                        androidx.compose.material3.Button(onClick = {
+                        Button(onClick = {
                             viewModel.onEvent(HabitListEvent.Reload)
                         }) {
                             Text("Повторить")
@@ -112,21 +112,6 @@ fun HabitListScreen(
                             showAction = true
                         )
                     }
-//                    Column(
-//                        modifier = Modifier.fillMaxSize(),
-//                        horizontalAlignment = Alignment.CenterHorizontally,
-//                        verticalArrangement = Arrangement.Center
-//                    ) {
-//                        Text(
-//                            text = "Привычек пока нет",
-//                            style = MaterialTheme.typography.titleMedium
-//                        )
-//                        Text(
-//                            text = "Нажмите + чтобы добавить первую привычку",
-//                            style = MaterialTheme.typography.bodyMedium,
-//                            color = MaterialTheme.colorScheme.onSurfaceVariant
-//                        )
-//                    }
                 }
                 else -> {
                     LazyColumn(
@@ -135,8 +120,12 @@ fun HabitListScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(state.habits) { habit ->
+                            // Проверяем, выполнена ли привычка сегодня
+                            val isCompletedToday = habit.lastCompleted == LocalDate.now()
+
                             HabitCard(
                                 habit = habit,
+                                isCompletedToday = isCompletedToday,
                                 onToggleCompletion = {
                                     viewModel.onEvent(
                                         HabitListEvent.ToggleCompletion(habit.id)

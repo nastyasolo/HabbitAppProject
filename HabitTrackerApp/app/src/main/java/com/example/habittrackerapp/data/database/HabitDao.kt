@@ -27,15 +27,19 @@ interface HabitDao {
     @Query("SELECT * FROM habits ORDER BY createdAt DESC")
     suspend fun getAllHabitsSimple(): List<Habit>
 
-    // Новый метод для получения привычек, ожидающих синхронизации
     @Query("SELECT * FROM habits WHERE syncStatus = 'PENDING'")
     suspend fun getPendingHabits(): List<Habit>
 
-    // Новый метод для обновления статуса синхронизации
     @Query("UPDATE habits SET syncStatus = :status, lastSynced = :timestamp WHERE id = :id")
-    suspend fun updateSyncStatus(id: String, status: String, timestamp: Long)
+    suspend fun updateHabitSyncStatus(id: String, status: String, timestamp: Long)
 
-    // Метод для получения привычек по категории
     @Query("SELECT * FROM habits WHERE category = :category ORDER BY createdAt DESC")
     fun getHabitsByCategory(category: String): Flow<List<Habit>>
+
+    // методы для обновления кэшированных полей
+    @Query("UPDATE habits SET currentStreak = :streak, lastCompleted = :lastCompleted WHERE id = :id")
+    suspend fun updateHabitStreak(id: String, streak: Int, lastCompleted: String?)
+
+    @Query("UPDATE habits SET longestStreak = :longestStreak WHERE id = :id")
+    suspend fun updateLongestStreak(id: String, longestStreak: Int)
 }
