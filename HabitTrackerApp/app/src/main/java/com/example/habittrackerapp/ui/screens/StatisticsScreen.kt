@@ -80,7 +80,7 @@ fun StatisticsScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Скоро здесь появятся графики вашего прогресса, анализ привычек и полезные insights",
+                text = "Скоро здесь появятся графики вашего прогресса, анализ привычек",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center

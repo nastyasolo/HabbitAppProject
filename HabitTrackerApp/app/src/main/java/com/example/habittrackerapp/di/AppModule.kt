@@ -1,7 +1,7 @@
 package com.example.habittrackerapp.di
 
 import android.content.Context
-import com.example.habittrackerapp.data.InitialDataProvider
+
 import com.example.habittrackerapp.data.database.AppDatabase
 import com.example.habittrackerapp.data.database.HabitDao
 import com.example.habittrackerapp.data.repository.AuthRepositoryImpl
@@ -32,11 +32,7 @@ object AppModule {
         return database.habitDao()
     }
 
-    @Provides
-    @Singleton
-    fun provideInitialDataProvider(habitDao: HabitDao): InitialDataProvider {
-        return InitialDataProvider(habitDao)
-    }
+
 
     @Provides
     @Singleton

@@ -1,7 +1,6 @@
 package com.example.habittrackerapp
 
 import android.app.Application
-import com.example.habittrackerapp.data.InitialDataProvider
 import com.example.habittrackerapp.data.sync.SyncManager
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
