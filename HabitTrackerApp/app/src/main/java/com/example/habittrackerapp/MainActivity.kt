@@ -3,15 +3,12 @@ package com.example.habittrackerapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
-import com.example.habittrackerapp.ui.viewmodel.AuthViewModel
+import com.example.habittrackerapp.ui.viewmodel.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -19,13 +16,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            HabitTrackerAppTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    AppContent()
-                }
+            // Получаем ViewModel для темы
+            val themeViewModel: ThemeViewModel = hiltViewModel()
+            val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
+
+            HabitTrackerAppTheme(darkTheme = isDarkTheme) {
+                AppContent()
             }
         }
     }
@@ -33,13 +29,12 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppContent() {
-    val authViewModel: AuthViewModel = hiltViewModel()
-    val authState = authViewModel.uiState.collectAsState().value
+    val authViewModel: com.example.habittrackerapp.ui.viewmodel.AuthViewModel = hiltViewModel()
+    val authState by authViewModel.uiState.collectAsState()
 
     if (!authState.isAuthenticated) {
         AuthScreen()
     } else {
-        // Определим HabitTrackerApp здесь временно
         MainApp()
     }
 }

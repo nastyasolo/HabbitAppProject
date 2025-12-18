@@ -60,6 +60,8 @@ android {
 dependencies {
     coreLibraryDesugaring(libs.desugarJdkLibs)
 
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation ("com.google.code.gson:gson:2.10.1")
 //    // Google Sign-In base

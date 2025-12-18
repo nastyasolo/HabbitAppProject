@@ -1,25 +1,32 @@
 package com.example.habittrackerapp.ui.screens
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.habittrackerapp.ui.viewmodel.AuthViewModel
+import com.example.habittrackerapp.ui.viewmodel.ThemeViewModel
 
-@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit
 ) {
     val authViewModel: AuthViewModel = hiltViewModel()
+    val themeViewModel: ThemeViewModel = hiltViewModel()
+
+    val authState by authViewModel.uiState.collectAsState()
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
 
     Scaffold(
         topBar = {
@@ -27,7 +34,10 @@ fun SettingsScreen(
                 title = { Text("Настройки") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Назад"
+                        )
                     }
                 }
             )
@@ -39,6 +49,65 @@ fun SettingsScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
+            // Секция внешнего вида (тема)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Внешний вид",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    // Переключатель темы
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (isDarkTheme) Icons.Default.DarkMode else Icons.Default.LightMode,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = if (isDarkTheme) "Темная тема" else "Светлая тема",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = if (isDarkTheme)
+                                        "Включена темная тема"
+                                    else
+                                        "Включена светлая тема",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Switch(
+                            checked = isDarkTheme,
+                            onCheckedChange = {
+                                themeViewModel.toggleTheme()
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Секция аккаунта
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -54,7 +123,7 @@ fun SettingsScreen(
                     )
 
                     // Информация о пользователе
-                    authViewModel.uiState.value.currentUser?.let { user ->
+                    authState.currentUser?.let { user ->
                         Column(
                             modifier = Modifier.padding(bottom = 16.dp)
                         ) {
@@ -74,7 +143,6 @@ fun SettingsScreen(
                     Button(
                         onClick = {
                             authViewModel.logout()
-                            // После выхода MainApp автоматически переключится на AuthScreen
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
@@ -87,7 +155,7 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ExitToApp,
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -121,12 +189,6 @@ fun SettingsScreen(
                         Text("Версия")
                         Text("1.0.0")
                     }
-
-                    // Здесь можно добавить другие настройки:
-                    // - Тема (темная/светлая)
-                    // - Уведомления
-                    // - Синхронизация
-                    // - Очистка кэша
                 }
             }
         }
