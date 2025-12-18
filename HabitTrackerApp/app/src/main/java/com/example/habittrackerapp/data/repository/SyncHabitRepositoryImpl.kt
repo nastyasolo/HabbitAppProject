@@ -76,6 +76,22 @@ class SyncHabitRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getAllHabitsWithCompletions(): Flow<List<HabitWithCompletions>> {
+        return habitDao.getAllHabits().map { habitEntities ->
+            habitEntities.map { habitEntity ->
+                val domainHabit = HabitMapper.toDomain(habitEntity)
+                val completions = completionDao
+                    .getCompletionsForHabitSimple(habitEntity.id)
+                    .map { HabitCompletionMapper.toDomain(it) }
+
+                HabitWithCompletions(
+                    habit = domainHabit,
+                    completions = completions
+                )
+            }
+        }
+    }
+
     override suspend fun toggleHabitCompletion(id: String) {
         val today = LocalDate.now()
         val todayString = today.format(dateFormatter)

@@ -19,6 +19,8 @@ interface HabitRepository {
     suspend fun getTodayHabits(): List<Habit>
     suspend fun getWeeklyHabits(): List<Habit>
 
+    fun getAllHabitsWithCompletions(): Flow<List<HabitWithCompletions>>
+
     // Методы для синхронизации
     suspend fun syncHabits(): Boolean
     suspend fun syncPendingHabits(): Boolean

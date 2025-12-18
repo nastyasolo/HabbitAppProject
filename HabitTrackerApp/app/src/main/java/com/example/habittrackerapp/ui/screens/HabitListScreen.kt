@@ -119,21 +119,26 @@ fun HabitListScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(state.habits) { habit ->
-                            // Проверяем, выполнена ли привычка сегодня
-                            val isCompletedToday = habit.lastCompleted == LocalDate.now()
+                        items(state.habits) { habitWithCompletions ->
+
+                            val habit = habitWithCompletions.habit
+                            val isCompletedToday = habitWithCompletions.completedToday
+
+                            val weeklyProgress = habitWithCompletions.completions
+                                .filter { it.completed }
+                                .filter { it.date >= LocalDate.now().minusDays(6) }
+                                .size / 7f
 
                             HabitCard(
-                                habit = habit,
+                                habit = habit.copy(currentStreak = habitWithCompletions.currentStreak),
                                 isCompletedToday = isCompletedToday,
+                                weeklyProgress = weeklyProgress,
                                 onToggleCompletion = {
                                     viewModel.onEvent(
                                         HabitListEvent.ToggleCompletion(habit.id)
                                     )
                                 },
-                                onCardClick = {
-                                    onHabitClick(habit.id)
-                                }
+                                onCardClick = { onHabitClick(habit.id) }
                             )
                         }
                     }

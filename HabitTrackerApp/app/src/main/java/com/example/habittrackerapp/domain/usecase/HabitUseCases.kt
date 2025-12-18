@@ -59,3 +59,10 @@ class GetHabitCompletionsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(habitId: String) = repository.getHabitCompletions(habitId)
 }
+
+class GetHabitsWithCompletionsUseCase @Inject constructor(
+    private val repository: HabitRepository
+) {
+    operator fun invoke(): Flow<List<HabitWithCompletions>> =
+        repository.getAllHabitsWithCompletions()
+}

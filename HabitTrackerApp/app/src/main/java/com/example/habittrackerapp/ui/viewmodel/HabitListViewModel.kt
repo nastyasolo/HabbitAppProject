@@ -3,6 +3,7 @@ package com.example.habittrackerapp.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.habittrackerapp.domain.model.Habit
+import com.example.habittrackerapp.domain.model.HabitWithCompletions
 import com.example.habittrackerapp.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -12,36 +13,33 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HabitListViewModel @Inject constructor(
-    private val getHabitsUseCase: GetHabitsUseCase,
+    private val getHabitsWithCompletions: GetHabitsWithCompletionsUseCase,
     private val toggleHabitCompletionUseCase: ToggleHabitCompletionUseCase,
     private val deleteHabitUseCase: DeleteHabitUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HabitListState())
-    val state: StateFlow<HabitListState> = _state.asStateFlow()
+    val state: StateFlow<HabitListState> = _state
 
     init {
-        viewModelScope.launch {
-            delay(100)
-            loadHabits()
-        }
+        loadHabits()
     }
 
     private fun loadHabits() {
         viewModelScope.launch {
-            getHabitsUseCase()
-                .catch { throwable ->
-                    _state.update { it.copy(
-                        isLoading = false,
-                        error = throwable.message
-                    ) }
+            getHabitsWithCompletions()
+                .onStart { _state.update { it.copy(isLoading = true) } }
+                .catch { error ->
+                    _state.update { it.copy(error = error.message, isLoading = false) }
                 }
                 .collect { habits ->
-                    _state.update { it.copy(
-                        habits = habits,
-                        isLoading = false,
-                        error = null
-                    ) }
+                    _state.update {
+                        it.copy(
+                            habits = habits,
+                            isLoading = false,
+                            error = null
+                        )
+                    }
                 }
         }
     }
@@ -49,17 +47,12 @@ class HabitListViewModel @Inject constructor(
     fun onEvent(event: HabitListEvent) {
         when (event) {
             is HabitListEvent.ToggleCompletion -> {
-                viewModelScope.launch {
-                    toggleHabitCompletionUseCase(event.habitId)
-                }
+                viewModelScope.launch { toggleHabitCompletionUseCase(event.habitId) }
             }
             is HabitListEvent.DeleteHabit -> {
-                viewModelScope.launch {
-                    deleteHabitUseCase(event.habit)
-                }
+                viewModelScope.launch { deleteHabitUseCase(event.habit) }
             }
             HabitListEvent.Reload -> {
-                _state.update { it.copy(isLoading = true) }
                 loadHabits()
             }
         }
@@ -67,8 +60,8 @@ class HabitListViewModel @Inject constructor(
 }
 
 data class HabitListState(
-    val habits: List<Habit> = emptyList(),
-    val isLoading: Boolean = true,
+    val habits: List<HabitWithCompletions> = emptyList(),
+    val isLoading: Boolean = false,
     val error: String? = null
 )
 
