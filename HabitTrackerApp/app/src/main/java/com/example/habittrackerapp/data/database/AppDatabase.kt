@@ -7,10 +7,11 @@ import androidx.room.TypeConverters
 import android.content.Context
 import com.example.habittrackerapp.data.model.Habit
 import com.example.habittrackerapp.data.model.HabitCompletion
+import com.example.habittrackerapp.data.model.TaskEntity
 
 @Database(
-    entities = [Habit::class, HabitCompletion::class],
-    version = 1,  // Начнем с версии 1 для чистого старта
+    entities = [Habit::class, HabitCompletion::class, TaskEntity::class],
+    version = 1,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -18,6 +19,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun habitDao(): HabitDao
     abstract fun habitCompletionDao(): HabitCompletionDao
+    abstract fun taskDao(): TaskDao
 
     companion object {
         @Volatile
@@ -25,6 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase {
             return Instance ?: synchronized(this) {
+                println("DEBUG: Creating AppDatabase instance")
                 Room.databaseBuilder(
                     context,
                     AppDatabase::class.java,

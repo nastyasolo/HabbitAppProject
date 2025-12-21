@@ -8,11 +8,15 @@ import com.example.habittrackerapp.domain.model.SyncStatus
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 class Converters {
     private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
     private val gson = Gson()
+    private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
 
 
     @TypeConverter
@@ -30,7 +34,24 @@ class Converters {
     fun toLocalDate(dateString: String?): LocalDate? {
         return dateString?.let { LocalDate.parse(it, dateFormatter) }
     }
+    @TypeConverter
+    fun fromLocalDateTime(dateTime: LocalDateTime?): String? {
+        return dateTime?.format(dateTimeFormatter)
+    }
 
+    @TypeConverter
+    fun toLocalDateTime(dateTimeString: String?): LocalDateTime? {
+        return dateTimeString?.let { LocalDateTime.parse(it, dateTimeFormatter) }
+    }
+    @TypeConverter
+    fun fromLocalTime(time: LocalTime?): String? {
+        return time?.toString()
+    }
+
+    @TypeConverter
+    fun toLocalTime(timeString: String?): LocalTime? {
+        return timeString?.let { LocalTime.parse(it) }
+    }
     @TypeConverter
     fun fromDayOfWeekList(days: List<DayOfWeek>): String {
         return gson.toJson(days.map { it.name })

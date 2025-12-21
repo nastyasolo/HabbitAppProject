@@ -5,6 +5,7 @@ import android.content.Context
 import com.example.habittrackerapp.data.database.AppDatabase
 import com.example.habittrackerapp.data.database.HabitCompletionDao
 import com.example.habittrackerapp.data.database.HabitDao
+import com.example.habittrackerapp.data.database.TaskDao
 import com.example.habittrackerapp.data.repository.AuthRepositoryImpl
 import com.example.habittrackerapp.data.repository.SyncHabitRepositoryImpl
 import com.example.habittrackerapp.data.sync.SyncManager
@@ -36,6 +37,12 @@ object AppModule {
     @Provides
     fun provideHabitCompletionDao(appDatabase: AppDatabase): HabitCompletionDao {
         return appDatabase.habitCompletionDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTaskDao(database: AppDatabase): TaskDao {
+        return database.taskDao()
     }
 
     @Provides

@@ -15,10 +15,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.habittrackerapp.ui.components.HabitBottomNavigation
-import com.example.habittrackerapp.ui.screens.AddEditHabitScreen
-import com.example.habittrackerapp.ui.screens.HabitListScreen
-import com.example.habittrackerapp.ui.screens.StatisticsScreen
-import com.example.habittrackerapp.ui.screens.SettingsScreen
+import com.example.habittrackerapp.ui.screens.*
 import com.example.habittrackerapp.ui.screens.auth.LoginScreen
 import com.example.habittrackerapp.ui.screens.auth.RegisterScreen
 import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
@@ -29,12 +26,9 @@ fun MainApp() {
     val authViewModel: AuthViewModel = hiltViewModel()
     val authState by authViewModel.uiState.collectAsState()
 
-    // Главная логика: если авторизован - показываем приложение, если нет - экран входа
     if (authState.isAuthenticated) {
-        // Пользователь авторизован - показываем основное приложение
         AuthenticatedApp()
     } else {
-        // Пользователь не авторизован - показываем экран входа
         AuthScreen()
     }
 }
@@ -45,16 +39,13 @@ fun AuthScreen() {
     val authViewModel: AuthViewModel = hiltViewModel()
     val authState by authViewModel.uiState.collectAsState()
 
-    // Если аутентифицировались, AuthScreen сам закроется через MainApp
     NavHost(
         navController = navController,
         startDestination = "login"
     ) {
         composable("login") {
             LoginScreen(
-                onLoginSuccess = {
-                    // Успешный вход обрабатывается через состояние в MainApp
-                },
+                onLoginSuccess = { },
                 onNavigateToRegister = {
                     navController.navigate("register")
                 }
@@ -63,9 +54,7 @@ fun AuthScreen() {
 
         composable("register") {
             RegisterScreen(
-                onRegisterSuccess = {
-                    // Успешная регистрация обрабатывается через состояние в MainApp
-                },
+                onRegisterSuccess = { },
                 onNavigateToLogin = {
                     navController.popBackStack()
                 }
@@ -81,7 +70,7 @@ fun AuthenticatedApp() {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val showBottomNavigation = when (currentRoute) {
-        "habitList", "statistics", "settings" -> true
+        "habitList", "tasks", "statistics", "settings" -> true
         else -> false
     }
 
@@ -135,6 +124,32 @@ fun AuthenticatedApp() {
                 val habitId = backStackEntry.arguments?.getString("habitId")
                 AddEditHabitScreen(
                     habitId = if (habitId == "null") null else habitId,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // ТАСКИ
+            composable("tasks") {
+                TaskListScreen(
+                    navController = navController
+                )
+            }
+
+            composable(
+                route = "addEditTask/{taskId}",
+                arguments = listOf(
+                    navArgument("taskId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val taskId = backStackEntry.arguments?.getString("taskId")
+                AddEditTaskScreen(
+                    taskId = if (taskId == "null") null else taskId,
                     onNavigateBack = {
                         navController.popBackStack()
                     }

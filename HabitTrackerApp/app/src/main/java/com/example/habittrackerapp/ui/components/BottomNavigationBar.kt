@@ -40,6 +40,12 @@ fun HabitBottomNavigation(
             unselectedIcon = R.drawable.ic_habit_outline
         ),
         BottomNavItem(
+            route = "tasks",
+            title = "Задачи",
+            selectedIcon = R.drawable.ic_tasks_filled,
+            unselectedIcon = R.drawable.ic_tasks_outline
+        ),
+        BottomNavItem(
             route = "statistics",
             title = "Статистика",
             selectedIcon = R.drawable.ic_stats_filled,
@@ -50,7 +56,8 @@ fun HabitBottomNavigation(
             title = "Настройки",
             selectedIcon = R.drawable.ic_settings_filled,
             unselectedIcon = R.drawable.ic_settings_outline
-        )
+        ),
+
     )
 
     Row(
