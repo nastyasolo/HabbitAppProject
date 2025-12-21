@@ -20,9 +20,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.habittrackerapp.domain.model.Category
 import com.example.habittrackerapp.domain.model.Priority
 import com.example.habittrackerapp.ui.components.DatePickerDialog
-import com.example.habittrackerapp.ui.components.TimePickerDialog
+import com.example.habittrackerapp.ui.components.UniversalTimePickerDialog
 import com.example.habittrackerapp.ui.viewmodel.AddEditTaskViewModel
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -255,9 +256,14 @@ fun AddEditTaskScreen(
             )
         }
         if (showTimePicker) {
-            TimePickerDialog(
-                initialTime = task?.dueTime,
-                onTimeSelected = { time ->
+            UniversalTimePickerDialog(
+                initialTime = task?.dueTime?.format(DateTimeFormatter.ofPattern("HH:mm")),
+                onTimeSelected = { timeString ->
+                    val time = if (timeString != null) {
+                        LocalTime.parse(timeString)
+                    } else {
+                        null
+                    }
                     viewModel.updateDueTime(time)
                     showTimePicker = false
                 },

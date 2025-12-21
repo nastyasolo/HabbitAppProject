@@ -14,14 +14,29 @@ import androidx.compose.ui.window.Dialog
 import java.time.LocalTime
 
 @Composable
-fun TimePickerDialog(
-    initialTime: LocalTime?,
-    onTimeSelected: (LocalTime?) -> Unit,
+fun UniversalTimePickerDialog(
+    initialTime: String? = null,
+    onTimeSelected: (String?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var selectedHour by remember { mutableStateOf(initialTime?.hour ?: 12) }
-    var selectedMinute by remember { mutableStateOf(initialTime?.minute ?: 0) }
+    var selectedHour by remember { mutableStateOf(12) }
+    var selectedMinute by remember { mutableStateOf(0) }
     var showDialog by remember { mutableStateOf(true) }
+
+    // Инициализируем время из строки "HH:mm"
+    LaunchedEffect(initialTime) {
+        if (!initialTime.isNullOrBlank()) {
+            try {
+                val parts = initialTime.split(":")
+                if (parts.size == 2) {
+                    selectedHour = parts[0].toInt()
+                    selectedMinute = parts[1].toInt()
+                }
+            } catch (e: Exception) {
+                // Оставляем значения по умолчанию
+            }
+        }
+    }
 
     if (showDialog) {
         Dialog(onDismissRequest = {
@@ -91,7 +106,7 @@ fun TimePickerDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Минуты
+                    // Минуты (с шагом 5 минут для удобства)
                     Text(
                         text = "Минуты:",
                         style = MaterialTheme.typography.labelMedium
@@ -104,7 +119,7 @@ fun TimePickerDialog(
                     ) {
                         IconButton(
                             onClick = {
-                                selectedMinute = if (selectedMinute <= 0) 59 else selectedMinute - 1
+                                selectedMinute = if (selectedMinute <= 0) 55 else selectedMinute - 5
                             }
                         ) {
                             Icon(
@@ -121,7 +136,7 @@ fun TimePickerDialog(
 
                         IconButton(
                             onClick = {
-                                selectedMinute = if (selectedMinute >= 59) 0 else selectedMinute + 1
+                                selectedMinute = if (selectedMinute >= 55) 0 else selectedMinute + 5
                             }
                         ) {
                             Icon(
@@ -134,18 +149,30 @@ fun TimePickerDialog(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // Быстрые кнопки
+                    Text(
+                        text = "Распространённое время:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Button(
                             onClick = {
-                                selectedHour = 9
+                                selectedHour = 8
                                 selectedMinute = 0
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
                         ) {
-                            Text("9:00")
+                            Text("8:00")
                         }
 
                         Button(
@@ -153,7 +180,11 @@ fun TimePickerDialog(
                                 selectedHour = 12
                                 selectedMinute = 0
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
                         ) {
                             Text("12:00")
                         }
@@ -163,11 +194,39 @@ fun TimePickerDialog(
                                 selectedHour = 18
                                 selectedMinute = 0
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
                         ) {
                             Text("18:00")
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Поле для ручного ввода
+                    OutlinedTextField(
+                        value = String.format("%02d:%02d", selectedHour, selectedMinute),
+                        onValueChange = { input ->
+                            try {
+                                if (input.length == 5 && input[2] == ':') {
+                                    val hour = input.substring(0, 2).toInt()
+                                    val minute = input.substring(3, 5).toInt()
+                                    if (hour in 0..23 && minute in 0..59) {
+                                        selectedHour = hour
+                                        selectedMinute = minute
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                // Игнорируем некорректный ввод
+                            }
+                        },
+                        label = { Text("Ручной ввод (ЧЧ:ММ)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -177,29 +236,33 @@ fun TimePickerDialog(
                     ) {
                         TextButton(
                             onClick = {
-                                showDialog = false
-                                onDismiss()
-                            }
-                        ) {
-                            Text("Отмена")
-                        }
-
-                        Button(
-                            onClick = {
-                                onTimeSelected(LocalTime.of(selectedHour, selectedMinute))
-                                showDialog = false
-                            }
-                        ) {
-                            Text("Выбрать")
-                        }
-
-                        TextButton(
-                            onClick = {
                                 onTimeSelected(null)
                                 showDialog = false
                             }
                         ) {
                             Text("Без времени")
+                        }
+
+                        Row {
+                            TextButton(
+                                onClick = {
+                                    showDialog = false
+                                    onDismiss()
+                                }
+                            ) {
+                                Text("Отмена")
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Button(
+                                onClick = {
+                                    onTimeSelected(String.format("%02d:%02d", selectedHour, selectedMinute))
+                                    showDialog = false
+                                }
+                            ) {
+                                Text("Выбрать")
+                            }
                         }
                     }
                 }

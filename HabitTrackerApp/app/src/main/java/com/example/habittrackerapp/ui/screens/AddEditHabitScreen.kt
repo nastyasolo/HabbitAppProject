@@ -1,6 +1,7 @@
 package com.example.habittrackerapp.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.habittrackerapp.domain.model.HabitType
 import com.example.habittrackerapp.domain.model.Priority
 import com.example.habittrackerapp.ui.components.PriorityChip
+import com.example.habittrackerapp.ui.components.UniversalTimePickerDialog
 import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
 import com.example.habittrackerapp.ui.theme.PriorityHigh
 import com.example.habittrackerapp.ui.theme.PriorityLow
@@ -50,6 +54,7 @@ fun AddEditHabitScreen(
     viewModel: AddEditHabitViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    var showTimePicker by remember { mutableStateOf(false) }
 
     // Анимация прокрутки для AppBar
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -347,14 +352,11 @@ fun AddEditHabitScreen(
 
                             OutlinedTextField(
                                 value = state.reminderTime ?: "",
-                                onValueChange = {
-                                    // Ограничиваем ввод только цифрами и двоеточием
-                                    val filtered = it.filter { char -> char.isDigit() || char == ':' }
-                                    val newValue = if (filtered.isEmpty()) null else filtered
-                                    viewModel.onEvent(AddEditHabitEvent.ReminderTimeChanged(newValue))
-                                },
+                                onValueChange = { },
                                 label = { Text("Например: 09:00") },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showTimePicker = true },
                                 shape = RoundedCornerShape(12.dp),
                                 colors = TextFieldDefaults.outlinedTextFieldColors(
                                     focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -366,18 +368,35 @@ fun AddEditHabitScreen(
                                     focusedLabelColor = MaterialTheme.colorScheme.primary,
                                     unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Number,
-                                    imeAction = ImeAction.Done
-                                ),
                                 placeholder = { Text("ЧЧ:ММ") },
                                 leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Notifications,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                                    )
+                                    IconButton(
+                                        onClick = { showTimePicker = true },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Schedule,
+                                            contentDescription = "Выбрать время",
+                                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                                        )
+                                    }
                                 },
+                                trailingIcon = {
+                                    if (state.reminderTime != null) {
+                                        IconButton(
+                                            onClick = {
+                                                viewModel.onEvent(AddEditHabitEvent.ReminderTimeChanged(null))
+                                            }
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Clear,
+                                                contentDescription = "Очистить",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                },
+                                readOnly = true,
                                 singleLine = true,
                                 maxLines = 1
                             )
@@ -389,6 +408,16 @@ fun AddEditHabitScreen(
                             )
                         }
                     }
+                }
+                if (showTimePicker) {
+                    UniversalTimePickerDialog(
+                        initialTime = state.reminderTime,
+                        onTimeSelected = { time ->
+                            viewModel.onEvent(AddEditHabitEvent.ReminderTimeChanged(time))
+                            showTimePicker = false
+                        },
+                        onDismiss = { showTimePicker = false }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))

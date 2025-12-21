@@ -250,20 +250,40 @@ fun HabitCard(
             )
 
             // Напоминание
-            habit.reminderTime?.let {
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+//            habit.reminderTime?.let {
+//                Spacer(modifier = Modifier.height(12.dp))
+//                Row(verticalAlignment = Alignment.CenterVertically) {
+//                    Icon(
+//                        imageVector = Icons.Default.Notifications,
+//                        contentDescription = null,
+//                        tint = MaterialTheme.colorScheme.tertiary,
+//                        modifier = Modifier.size(14.dp)
+//                    )
+//                    Spacer(modifier = Modifier.width(6.dp))
+//                    Text(
+//                        text = "Напоминание: $it",
+//                        style = MaterialTheme.typography.labelSmall,
+//                        color = MaterialTheme.colorScheme.tertiary
+//                    )
+//                }
+//            }
+            // В HabitCard добавь отображение времени после названия привычки:
+            if (habit.reminderTime != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
-                        imageVector = Icons.Default.Notifications,
+                        Icons.Default.Schedule,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(12.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Напоминание: $it",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary
+                        text = habit.reminderTime,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
