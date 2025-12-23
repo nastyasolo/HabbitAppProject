@@ -1,7 +1,7 @@
 //package com.example.habittrackerapp.di
 //
 //import android.content.Context
-//import com.example.habittrackerapp.data.preferences.PreferencesManager
+//import androidx.work.WorkManager
 //import dagger.Module
 //import dagger.Provides
 //import dagger.hilt.InstallIn
@@ -11,11 +11,14 @@
 //
 //@Module
 //@InstallIn(SingletonComponent::class)
-//object PreferencesModule {
+//object WorkManagerModule {
 //
 //    @Provides
 //    @Singleton
-//    fun providePreferencesManager(@ApplicationContext context: Context): PreferencesManager {
-//        return PreferencesManager(context)
+//    fun provideWorkManager(
+//        @ApplicationContext context: Context
+//    ): WorkManager {
+//        // WorkManager инициализируется автоматически Hilt
+//        return WorkManager.getInstance(context)
 //    }
 //}

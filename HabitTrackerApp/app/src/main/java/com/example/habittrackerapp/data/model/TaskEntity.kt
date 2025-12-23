@@ -20,5 +20,9 @@ data class TaskEntity(
     val category: Category?,
     val isCompleted: Boolean,
     val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime
+    val updatedAt: LocalDateTime,
+
+    val reminderTime: LocalTime?,
+    val hasReminder: Boolean,
+    val reminderId: String?
 )

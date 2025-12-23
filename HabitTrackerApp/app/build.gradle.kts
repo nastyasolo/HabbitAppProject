@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     id("com.google.gms.google-services")
+
 }
 
 android {
@@ -58,12 +59,37 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring(libs.desugarJdkLibs)
+    implementation(libs.androidx.hilt.common)
+//    implementation(libs.androidx.hilt.work)
+    // Hilt для WorkManager
+    implementation("androidx.hilt:hilt-work:1.3.0")
+    ksp("androidx.hilt:hilt-compiler:1.3.0")
 
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    // Для точных напоминаний (Android 12+)
+    implementation("androidx.core:core:1.12.0")
+
+    // Для уведомлений
+    implementation("androidx.core:core-ktx:1.12.0")
+
+    // Gson для сериализации
+    implementation("com.google.code.gson:gson:2.10.1")
+
+
+
+
+    coreLibraryDesugaring(libs.desugarJdkLibs)
+    // Hilt
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    ksp("com.google.dagger:hilt-compiler:2.51.1")
+
+    // Hilt Navigation Compose
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     implementation("com.google.android.gms:play-services-auth:20.7.0")
-    implementation ("com.google.code.gson:gson:2.10.1")
+
 //    // Google Sign-In base
 //    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
 //    implementation("androidx.credentials:credentials:1.2.2")

@@ -4,18 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.habittrackerapp.domain.model.Habit
 import com.example.habittrackerapp.domain.model.HabitWithCompletions
-import com.example.habittrackerapp.domain.usecase.*
+import com.example.habittrackerapp.domain.usecase.HabitUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class HabitListViewModel @Inject constructor(
-    private val getHabitsWithCompletions: GetHabitsWithCompletionsUseCase,
-    private val toggleHabitCompletionUseCase: ToggleHabitCompletionUseCase,
-    private val deleteHabitUseCase: DeleteHabitUseCase
+    private val habitUseCases: HabitUseCases
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HabitListState())
@@ -27,7 +24,7 @@ class HabitListViewModel @Inject constructor(
 
     private fun loadHabits() {
         viewModelScope.launch {
-            getHabitsWithCompletions()
+            habitUseCases.getAllHabitsWithCompletions()
                 .onStart { _state.update { it.copy(isLoading = true) } }
                 .catch { error ->
                     _state.update { it.copy(error = error.message, isLoading = false) }
@@ -47,10 +44,10 @@ class HabitListViewModel @Inject constructor(
     fun onEvent(event: HabitListEvent) {
         when (event) {
             is HabitListEvent.ToggleCompletion -> {
-                viewModelScope.launch { toggleHabitCompletionUseCase(event.habitId) }
+                viewModelScope.launch { habitUseCases.toggleHabitCompletion(event.habitId) }
             }
             is HabitListEvent.DeleteHabit -> {
-                viewModelScope.launch { deleteHabitUseCase(event.habit) }
+                viewModelScope.launch { habitUseCases.deleteHabit(event.habit) }
             }
             HabitListEvent.Reload -> {
                 loadHabits()

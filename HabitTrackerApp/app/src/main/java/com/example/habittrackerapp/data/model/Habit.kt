@@ -20,7 +20,11 @@ data class Habit(
     val currentStreak: Int = 0,
     val longestStreak: Int = 0,
     val syncStatus: String = "PENDING",
-    val lastSynced: Long? = null
+    val lastSynced: Long? = null,
+
+    val reminderId: String = "",
+    val hasReminder: Boolean = false,
+    val reminderDays: String = "",
 )
 
 

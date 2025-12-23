@@ -3,12 +3,11 @@ package com.example.habittrackerapp.ui.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.habittrackerapp.domain.model.DayOfWeek // Импортируем ваш DayOfWeek
 import com.example.habittrackerapp.domain.model.Habit
 import com.example.habittrackerapp.domain.model.HabitType
 import com.example.habittrackerapp.domain.model.Priority
-import com.example.habittrackerapp.domain.usecase.GetHabitByIdUseCase
-import com.example.habittrackerapp.domain.usecase.InsertHabitUseCase
-import com.example.habittrackerapp.domain.usecase.UpdateHabitUseCase
+import com.example.habittrackerapp.domain.usecase.HabitUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,9 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddEditHabitViewModel @Inject constructor(
-    private val getHabitByIdUseCase: GetHabitByIdUseCase,
-    private val insertHabitUseCase: InsertHabitUseCase,
-    private val updateHabitUseCase: UpdateHabitUseCase,
+    private val habitUseCases: HabitUseCases,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -39,14 +36,16 @@ class AddEditHabitViewModel @Inject constructor(
         habitId?.let { id ->
             currentHabitId = id
             viewModelScope.launch {
-                getHabitByIdUseCase(id)?.let { habit ->
+                habitUseCases.getHabitById(id)?.let { habit ->
                     _state.update {
                         it.copy(
                             name = habit.name,
                             description = habit.description,
                             type = habit.type,
                             priority = habit.priority,
-                            reminderTime = habit.reminderTime
+                            reminderTime = habit.reminderTime,
+                            hasReminder = habit.hasReminder,
+                            reminderDays = habit.reminderDays ?: emptyList()
                         )
                     }
                 }
@@ -64,13 +63,15 @@ class AddEditHabitViewModel @Inject constructor(
                     description = currentState.description,
                     type = currentState.type,
                     priority = currentState.priority,
-                    reminderTime = currentState.reminderTime
+                    reminderTime = currentState.reminderTime,
+                    hasReminder = currentState.hasReminder,
+                    reminderDays = if (currentState.hasReminder) currentState.reminderDays else emptyList()
                 )
 
                 if (currentHabitId == null) {
-                    insertHabitUseCase(habit)
+                    habitUseCases.insertHabit(habit)
                 } else {
-                    updateHabitUseCase(habit)
+                    habitUseCases.updateHabit(habit)
                 }
             }
         }
@@ -98,17 +99,24 @@ class AddEditHabitViewModel @Inject constructor(
             is AddEditHabitEvent.ReminderTimeChanged -> {
                 _state.update { it.copy(reminderTime = event.reminderTime) }
             }
+            is AddEditHabitEvent.HasReminderChanged -> {
+                _state.update { it.copy(hasReminder = event.hasReminder) }
+            }
+            is AddEditHabitEvent.ReminderDaysChanged -> {
+                _state.update { it.copy(reminderDays = event.days) }
+            }
         }
     }
 }
 
-// Выносим классы состояния и событий ВНЕ ViewModel
 data class AddEditHabitState(
     val name: String = "",
     val description: String = "",
     val type: HabitType = HabitType.DAILY,
     val priority: Priority = Priority.MEDIUM,
     val reminderTime: String? = null,
+    val hasReminder: Boolean = false,
+    val reminderDays: List<DayOfWeek> = emptyList(),
     val nameError: String? = null
 ) {
     val isValid: Boolean
@@ -121,4 +129,6 @@ sealed class AddEditHabitEvent {
     data class TypeChanged(val type: HabitType) : AddEditHabitEvent()
     data class PriorityChanged(val priority: Priority) : AddEditHabitEvent()
     data class ReminderTimeChanged(val reminderTime: String?) : AddEditHabitEvent()
+    data class HasReminderChanged(val hasReminder: Boolean) : AddEditHabitEvent()
+    data class ReminderDaysChanged(val days: List<DayOfWeek>) : AddEditHabitEvent() // Используем ваш DayOfWeek
 }

@@ -1,16 +1,11 @@
 package com.example.habittrackerapp.di
 
 import android.content.Context
-
 import com.example.habittrackerapp.data.database.AppDatabase
 import com.example.habittrackerapp.data.database.HabitCompletionDao
 import com.example.habittrackerapp.data.database.HabitDao
 import com.example.habittrackerapp.data.database.TaskDao
-import com.example.habittrackerapp.data.repository.AuthRepositoryImpl
-import com.example.habittrackerapp.data.repository.SyncHabitRepositoryImpl
-import com.example.habittrackerapp.data.sync.SyncManager
-import com.example.habittrackerapp.domain.repository.AuthRepository
-import com.example.habittrackerapp.domain.repository.HabitRepository
+import com.example.habittrackerapp.utils.reminder.ReminderScheduler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,7 +42,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideContext(@ApplicationContext context: Context): Context {
-        return context
+    fun provideReminderScheduler(
+        @ApplicationContext context: Context
+    ): ReminderScheduler {
+        return ReminderScheduler(context)
     }
 }

@@ -15,8 +15,14 @@ data class Task(
     val category: Category? = null,
     val isCompleted: Boolean = false,
     val createdAt: LocalDateTime = LocalDateTime.now(),
-    val updatedAt: LocalDateTime = LocalDateTime.now()
+    val updatedAt: LocalDateTime = LocalDateTime.now(),
+
+    //  поля для напоминаний
+    val reminderTime: LocalTime? = null,
+    val hasReminder: Boolean = false,
+    val reminderId: String? = UUID.randomUUID().toString()
 )
+
 
 //enum class Priority {
 //    LOW, MEDIUM, HIGH

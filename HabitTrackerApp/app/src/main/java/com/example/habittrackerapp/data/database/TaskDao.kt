@@ -4,6 +4,7 @@ import androidx.room.*
 import com.example.habittrackerapp.data.model.TaskEntity
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
+import java.time.LocalTime
 
 @Dao
 interface TaskDao {
@@ -62,4 +63,16 @@ interface TaskDao {
 
     @Query("SELECT COUNT(*) FROM tasks WHERE isCompleted = 0 AND dueDate = :today")
     suspend fun getDueTodayTasksCount(today: LocalDate): Int
+
+    @Query("UPDATE tasks SET reminderTime = :reminderTime, hasReminder = :hasReminder, reminderId = :reminderId WHERE id = :id")
+    suspend fun updateTaskReminder(id: String, reminderTime: LocalTime?, hasReminder: Boolean, reminderId: String?)
+
+    @Query("UPDATE tasks SET hasReminder = 0, reminderId = NULL WHERE id = :id")
+    suspend fun clearTaskReminder(id: String)
+
+    @Query("SELECT * FROM tasks WHERE hasReminder = 1 AND isCompleted = 0")
+    fun getTasksWithReminders(): Flow<List<TaskEntity>>
+
+    @Query("SELECT * FROM tasks WHERE reminderId = :reminderId")
+    suspend fun getTaskByReminderId(reminderId: String): TaskEntity?
 }

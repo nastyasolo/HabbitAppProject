@@ -7,8 +7,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +39,7 @@ fun AddEditTaskScreen(
     val isSaving by viewModel.isSaving.collectAsState()
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showReminderTimePicker by remember { mutableStateOf(false) } // Добавили для напоминания
 
     val focusRequester = remember { FocusRequester() }
 
@@ -168,6 +171,53 @@ fun AddEditTaskScreen(
                     }
                 }
 
+                // Напоминание (ДОБАВИЛИ)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Напоминание",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Switch(
+                        checked = task?.hasReminder ?: false,
+                        onCheckedChange = { viewModel.updateHasReminder(it) }
+                    )
+                }
+
+                if (task?.hasReminder == true) {
+                    // Время напоминания
+                    val reminderTimeText = task?.reminderTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: ""
+                    OutlinedTextField(
+                        value = reminderTimeText,
+                        onValueChange = { },
+                        label = { Text("Время напоминания (ЧЧ:ММ)") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showReminderTimePicker = true },
+                        readOnly = true,
+                        placeholder = { Text("Не указано") },
+                        leadingIcon = {
+                            IconButton(onClick = { showReminderTimePicker = true }) {
+                                Icon(Icons.Default.Notifications, contentDescription = "Выбрать время")
+                            }
+                        },
+                        trailingIcon = {
+                            if (task?.reminderTime != null) {
+                                IconButton(onClick = { viewModel.updateReminderTime(null) }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Очистить")
+                                }
+                            }
+                        }
+                    )
+                }
+
                 // Категория
                 Text(
                     text = "Категория",
@@ -270,7 +320,22 @@ fun AddEditTaskScreen(
                 onDismiss = { showTimePicker = false }
             )
         }
-
+        // Добавили TimePicker для напоминания
+        if (showReminderTimePicker) {
+            UniversalTimePickerDialog(
+                initialTime = task?.reminderTime?.format(DateTimeFormatter.ofPattern("HH:mm")),
+                onTimeSelected = { timeString ->
+                    val time = if (timeString != null) {
+                        LocalTime.parse(timeString)
+                    } else {
+                        null
+                    }
+                    viewModel.updateReminderTime(time)
+                    showReminderTimePicker = false
+                },
+                onDismiss = { showReminderTimePicker = false }
+            )
+        }
     }
 }
 

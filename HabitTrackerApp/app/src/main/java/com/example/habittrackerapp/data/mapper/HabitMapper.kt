@@ -11,7 +11,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 object HabitMapper {
-
     private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
     private val gson = Gson()
 
@@ -24,6 +23,14 @@ object HabitMapper {
             emptyList()
         }
 
+        val reminderDays = if (entity.reminderDays.isNotEmpty()) {
+            val type = object : com.google.gson.reflect.TypeToken<List<String>>() {}.type
+            val stringList: List<String> = gson.fromJson(entity.reminderDays, type)
+            stringList.map { DayOfWeek.valueOf(it) }
+        } else {
+            emptyList()
+        }
+
         return HabitDomain(
             id = entity.id,
             name = entity.name,
@@ -31,6 +38,9 @@ object HabitMapper {
             type = HabitType.valueOf(entity.type),
             priority = Priority.valueOf(entity.priority),
             reminderTime = entity.reminderTime,
+            hasReminder = entity.hasReminder,
+            reminderId = entity.reminderId,
+            reminderDays = reminderDays,
             targetDays = targetDays,
             createdAt = entity.createdAt,
             category = entity.category,
@@ -50,6 +60,9 @@ object HabitMapper {
             type = domain.type.name,
             priority = domain.priority.name,
             reminderTime = domain.reminderTime,
+            reminderId = domain.reminderId,
+            hasReminder = domain.hasReminder,
+            reminderDays = gson.toJson(domain.reminderDays.map { it.name }),
             targetDays = gson.toJson(domain.targetDays.map { it.name }),
             category = domain.category,
             createdAt = domain.createdAt,

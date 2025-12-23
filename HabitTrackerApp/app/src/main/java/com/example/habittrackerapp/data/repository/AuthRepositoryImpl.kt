@@ -8,6 +8,7 @@ import com.example.habittrackerapp.utils.GoogleSignInHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +20,7 @@ import javax.inject.Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) : AuthRepository {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)

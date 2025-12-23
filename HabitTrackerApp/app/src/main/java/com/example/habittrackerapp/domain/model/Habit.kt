@@ -18,8 +18,14 @@ data class Habit(
     val currentStreak: Int = 0,  // Кэшированный стрик
     val longestStreak: Int = 0,  // Самый длинный стрик
     val syncStatus: SyncStatus = SyncStatus.PENDING,
-    val lastSynced: Long? = null
+    val lastSynced: Long? = null,
+
+    val hasReminder: Boolean = false, //  флаг напоминания
+    val reminderId: String = UUID.randomUUID().toString(),
+    val reminderDays: List<DayOfWeek> = emptyList(), //  дни для WEEKLY
 ) {
+//    val hasActiveReminder: Boolean
+//        get() = reminderTime != null && reminderId != null
     companion object {
         fun create(
             name: String,

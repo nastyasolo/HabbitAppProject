@@ -15,7 +15,10 @@ class TaskMapper {
             category = entity.category,
             isCompleted = entity.isCompleted,
             createdAt = entity.createdAt,
-            updatedAt = entity.updatedAt
+            updatedAt = entity.updatedAt,
+            reminderTime = entity.reminderTime,
+            hasReminder = entity.hasReminder,
+            reminderId = entity.reminderId
         )
     }
 
@@ -30,7 +33,11 @@ class TaskMapper {
             category = domain.category,
             isCompleted = domain.isCompleted,
             createdAt = domain.createdAt,
-            updatedAt = domain.updatedAt
+            updatedAt = domain.updatedAt,
+            reminderTime = domain.reminderTime,
+            hasReminder = domain.hasReminder,
+            reminderId = domain.reminderId
+
         )
     }
 }

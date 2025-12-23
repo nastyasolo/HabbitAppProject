@@ -42,4 +42,14 @@ interface HabitDao {
 
     @Query("UPDATE habits SET longestStreak = :longestStreak WHERE id = :id")
     suspend fun updateLongestStreak(id: String, longestStreak: Int)
+
+
+    @Query("UPDATE habits SET reminderTime = :reminderTime, reminderId = :reminderId WHERE id = :id")
+    suspend fun updateHabitReminder(id: String, reminderTime: String?, reminderId: String?)
+
+    @Query("UPDATE habits SET reminderId = NULL WHERE id = :id")
+    suspend fun clearHabitReminder(id: String)
+
+    @Query("SELECT * FROM habits WHERE reminderTime IS NOT NULL AND reminderId IS NOT NULL")
+    fun getHabitsWithReminders(): Flow<List<Habit>>
 }

@@ -4,6 +4,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import android.content.Context
 import com.example.habittrackerapp.data.model.Habit
 import com.example.habittrackerapp.data.model.HabitCompletion
@@ -11,12 +13,11 @@ import com.example.habittrackerapp.data.model.TaskEntity
 
 @Database(
     entities = [Habit::class, HabitCompletion::class, TaskEntity::class],
-    version = 1,
+    version = 2, //
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-
     abstract fun habitDao(): HabitDao
     abstract fun habitCompletionDao(): HabitCompletionDao
     abstract fun taskDao(): TaskDao
@@ -25,15 +26,30 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var Instance: AppDatabase? = null
 
+        // Миграция с версии 1 на 2
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Добавляем новые столбцы для задач
+                database.execSQL("ALTER TABLE tasks ADD COLUMN reminderTime TEXT")
+                database.execSQL("ALTER TABLE tasks ADD COLUMN hasReminder INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE tasks ADD COLUMN reminderId TEXT DEFAULT ''")
+
+                // Добавляем новые столбцы для привычек
+                database.execSQL("ALTER TABLE habits ADD COLUMN reminderId TEXT DEFAULT ''")
+                database.execSQL("ALTER TABLE habits ADD COLUMN hasReminder INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE habits ADD COLUMN reminderDays TEXT DEFAULT ''")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return Instance ?: synchronized(this) {
-                println("DEBUG: Creating AppDatabase instance")
                 Room.databaseBuilder(
                     context,
                     AppDatabase::class.java,
                     "habit_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_1_2) //
+                    .fallbackToDestructiveMigration() //  Оставляем для безопасности
                     .build()
                     .also { Instance = it }
             }

@@ -43,7 +43,8 @@ class AddEditTaskViewModel @Inject constructor(
                     category = Category.PERSONAL,
                     isCompleted = false,
                     createdAt = LocalDateTime.now(),
-                    updatedAt = LocalDateTime.now()
+                    updatedAt = LocalDateTime.now(),
+                    hasReminder = false
                 )
             } else {
                 // Редактирование существующей задачи
@@ -73,6 +74,15 @@ class AddEditTaskViewModel @Inject constructor(
     fun updateCategory(category: Category?) {
         _task.value = _task.value?.copy(category = category, updatedAt = LocalDateTime.now())
     }
+
+    fun updateHasReminder(hasReminder: Boolean) {
+        _task.value = _task.value?.copy(hasReminder = hasReminder)
+    }
+
+    fun updateReminderTime(reminderTime: LocalTime?) {
+        _task.value = _task.value?.copy(reminderTime = reminderTime)
+    }
+
 
     fun saveTask(onSuccess: () -> Unit) {
         viewModelScope.launch {
