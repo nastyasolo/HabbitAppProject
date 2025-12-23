@@ -146,6 +146,41 @@ class SyncHabitRepositoryImpl @Inject constructor(
         return habits.filter { it.type == "WEEKLY" }.map { HabitMapper.toDomain(it) }
     }
 
+
+    override suspend fun getWeeklyProgress(habitId: String): Float {
+        val habit = getHabitById(habitId) ?: return 0f
+
+        return when (habit.type) {
+            HabitType.DAILY -> {
+                // Логика для ежедневных привычек
+                val completions = getHabitCompletions(habitId)
+                val lastWeekCompletions = completions
+                    .filter { it.completed }
+                    .filter { it.date >= LocalDate.now().minusDays(6) }
+                lastWeekCompletions.size / 7f
+            }
+            HabitType.WEEKLY -> {
+                // Логика для еженедельных привычек
+                val completions = getHabitCompletions(habitId)
+                val startOfWeek = LocalDate.now().with(java.time.DayOfWeek.MONDAY)
+                val targetDaysSet = habit.targetDays.toSet()
+
+                val completedDates = completions
+                    .filter { it.completed && it.date >= startOfWeek }
+                    .map { it.date }
+
+                val completedTargetDays = completedDates.count { date ->
+                    val dayOfWeek = DayOfWeek.fromInt(date.dayOfWeek.value)
+                    targetDaysSet.contains(dayOfWeek)
+                }
+
+                if (targetDaysSet.isNotEmpty()) {
+                    completedTargetDays.toFloat() / targetDaysSet.size
+                } else 0f
+            }
+        }
+    }
+
     override suspend fun syncHabits(): Boolean {
         return try {
             val user = authRepository.getCurrentUser() ?: return false
@@ -261,36 +296,93 @@ class SyncHabitRepositoryImpl @Inject constructor(
         val completions = completionDao.getCompletedDatesSimple(habitId)
         val habit = habitDao.getHabitById(habitId) ?: return
 
-        var currentStreak = 0
-        var longestStreak = habit.longestStreak
-        var currentDate = LocalDate.now()
-        val sortedDates = completions
-            .mapNotNull { dateStr ->
-                try {
-                    LocalDate.parse(dateStr)
-                } catch (e: Exception) {
-                    null
+        val domainHabit = HabitMapper.toDomain(habit)
+
+        when (domainHabit.type) {
+            HabitType.DAILY -> {
+                // Существующая логика для DAILY привычек
+                var currentStreak = 0
+                var longestStreak = habit.longestStreak
+                var currentDate = LocalDate.now()
+                val sortedDates = completions
+                    .mapNotNull { dateStr ->
+                        try {
+                            LocalDate.parse(dateStr)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    .sortedDescending()
+
+                for (completionDate in sortedDates) {
+                    if (completionDate == currentDate ||
+                        (currentStreak == 0 && completionDate == currentDate.minusDays(1))) {
+                        currentStreak++
+                        currentDate = currentDate.minusDays(1)
+                    } else {
+                        break
+                    }
                 }
-            }
-            .sortedDescending()
 
-        for (completionDate in sortedDates) {
-            if (completionDate == currentDate ||
-                (currentStreak == 0 && completionDate == currentDate.minusDays(1))) {
-                currentStreak++
-                currentDate = currentDate.minusDays(1)
-            } else {
-                break
+                if (currentStreak > longestStreak) {
+                    longestStreak = currentStreak
+                    habitDao.updateLongestStreak(habitId, longestStreak)
+                }
+
+                val lastCompleted = sortedDates.firstOrNull()?.format(dateFormatter)
+                habitDao.updateHabitStreak(habitId, currentStreak, lastCompleted)
+            }
+
+            HabitType.WEEKLY -> {
+                // Новая логика для WEEKLY привычек
+                val targetDaysSet = domainHabit.targetDays.toSet()
+                if (targetDaysSet.isEmpty()) return
+
+                var currentStreak = 0
+                var longestStreak = habit.longestStreak
+
+                // Группируем выполнения по неделям
+                val completedDates = completions.mapNotNull { dateStr ->
+                    try {
+                        LocalDate.parse(dateStr)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                // Проверяем недели с конца
+                var weekStart = LocalDate.now().with(java.time.DayOfWeek.MONDAY)
+
+                while (true) {
+                    val weekEnd = weekStart.plusDays(6)
+                    val weekCompletedDates = completedDates.filter {
+                        it >= weekStart && it <= weekEnd
+                    }
+
+                    // Проверяем, выполнены ли все целевые дни на этой неделе
+                    val completedDaysInWeek = weekCompletedDates.map { date ->
+                        DayOfWeek.fromInt(date.dayOfWeek.value)
+                    }.toSet()
+
+                    val isWeekCompleted = targetDaysSet.all { it in completedDaysInWeek }
+
+                    if (isWeekCompleted) {
+                        currentStreak++
+                        weekStart = weekStart.minusWeeks(1)
+                    } else {
+                        break
+                    }
+                }
+
+                if (currentStreak > longestStreak) {
+                    longestStreak = currentStreak
+                    habitDao.updateLongestStreak(habitId, longestStreak)
+                }
+
+                val lastCompleted = completedDates.maxOrNull()?.format(dateFormatter)
+                habitDao.updateHabitStreak(habitId, currentStreak, lastCompleted)
             }
         }
-
-        if (currentStreak > longestStreak) {
-            longestStreak = currentStreak
-            habitDao.updateLongestStreak(habitId, longestStreak)
-        }
-
-        val lastCompleted = sortedDates.firstOrNull()?.format(dateFormatter)
-        habitDao.updateHabitStreak(habitId, currentStreak, lastCompleted)
     }
 
     private suspend fun syncPendingCompletions(): Boolean {

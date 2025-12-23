@@ -9,30 +9,28 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.habittrackerapp.domain.model.DayOfWeek // Ваш кастомный DayOfWeek
+import com.example.habittrackerapp.domain.model.DayOfWeek
 import com.example.habittrackerapp.domain.model.HabitType
 import com.example.habittrackerapp.domain.model.Priority
 import com.example.habittrackerapp.ui.components.PriorityChip
@@ -40,7 +38,6 @@ import com.example.habittrackerapp.ui.components.UniversalTimePickerDialog
 import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
 import com.example.habittrackerapp.ui.viewmodel.AddEditHabitEvent
 import com.example.habittrackerapp.ui.viewmodel.AddEditHabitViewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -192,7 +189,7 @@ fun AddEditHabitScreen(
                                 ),
                                 isError = state.nameError != null,
                                 singleLine = true,
-                                maxLines = 1, // Фиксируем одну строку
+                                maxLines = 1,
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Text,
                                     imeAction = ImeAction.Next
@@ -310,6 +307,7 @@ fun AddEditHabitScreen(
                                 }
                             }
                         }
+
                         // Приоритет
                         Column {
                             Text(
@@ -332,6 +330,51 @@ fun AddEditHabitScreen(
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
+                            }
+                        }
+
+                        // Для WEEKLY привычек - выбор дней недели
+                        if (state.type == HabitType.WEEKLY) {
+                            Column {
+                                Text(
+                                    text = "Дни недели *",
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    val daysOfWeek = DayOfWeek.entries
+                                    daysOfWeek.forEach { day ->
+                                        val isSelected = state.targetDays.contains(day)
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = {
+                                                val currentDays = state.targetDays
+                                                val newDays = if (isSelected) {
+                                                    currentDays.toMutableList().apply { remove(day) }
+                                                } else {
+                                                    currentDays.toMutableList().apply { add(day) }
+                                                }
+                                                viewModel.onEvent(AddEditHabitEvent.TargetDaysChanged(newDays))
+                                            },
+                                            label = { Text(getDayName(day)) },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    text = "Привычка будет активна только в выбранные дни",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                                )
                             }
                         }
 
@@ -426,22 +469,20 @@ fun AddEditHabitScreen(
                                     maxLines = 1
                                 )
 
-                                // Добавить текст о том, что для WEEKLY привычек можно выбрать дни
+                                // Для WEEKLY привычек с напоминанием - можно выбрать дни напоминаний
                                 if (state.type == HabitType.WEEKLY) {
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = "Выберите дни для напоминания:",
+                                        text = "Дни для напоминания:",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(bottom = 4.dp)
                                     )
 
-                                    // Добавить выбор дней недели для WEEKLY привычек
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
-                                        // Используем ваш кастомный DayOfWeek
                                         val daysOfWeek = DayOfWeek.entries
                                         daysOfWeek.forEach { day ->
                                             val isSelected = state.reminderDays.contains(day)
@@ -457,10 +498,18 @@ fun AddEditHabitScreen(
                                                     viewModel.onEvent(AddEditHabitEvent.ReminderDaysChanged(newDays))
                                                 },
                                                 label = { Text(getDayName(day)) },
-                                                modifier = Modifier.weight(1f)
+                                                modifier = Modifier.weight(1f),
+                                                enabled = state.targetDays.contains(day) // Можно выбирать только дни, когда привычка активна
                                             )
                                         }
                                     }
+
+                                    Text(
+                                        text = "Вы можете получать напоминания только в дни, когда привычка активна",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                                    )
                                 }
 
                                 Text(
@@ -473,6 +522,7 @@ fun AddEditHabitScreen(
                         }
                     }
                 }
+
                 if (showTimePicker) {
                     UniversalTimePickerDialog(
                         initialTime = state.reminderTime,
@@ -491,7 +541,6 @@ fun AddEditHabitScreen(
 }
 
 private fun getDayName(day: DayOfWeek): String {
-    // Проверьте, какие значения есть в вашем enum DayOfWeek
     return when (day) {
         DayOfWeek.MONDAY -> "Пн"
         DayOfWeek.TUESDAY -> "Вт"

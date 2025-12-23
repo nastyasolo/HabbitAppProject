@@ -24,6 +24,11 @@ data class Habit(
     val reminderId: String = UUID.randomUUID().toString(),
     val reminderDays: List<DayOfWeek> = emptyList(), //  дни для WEEKLY
 ) {
+    val isValid: Boolean
+        get() = name.isNotBlank() &&
+                (type != HabitType.WEEKLY || targetDays.isNotEmpty()) &&
+                (!hasReminder || reminderTime != null) &&
+                (reminderDays.isEmpty() || reminderDays.all { it in targetDays })
 //    val hasActiveReminder: Boolean
 //        get() = reminderTime != null && reminderId != null
     companion object {

@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
-
 @HiltViewModel
 class AddEditHabitViewModel @Inject constructor(
     private val habitUseCases: HabitUseCases,
@@ -45,7 +44,8 @@ class AddEditHabitViewModel @Inject constructor(
                             priority = habit.priority,
                             reminderTime = habit.reminderTime,
                             hasReminder = habit.hasReminder,
-                            reminderDays = habit.reminderDays ?: emptyList()
+                            reminderDays = habit.reminderDays ?: emptyList(),
+                            targetDays = habit.targetDays ?: emptyList() // Загружаем targetDays
                         )
                     }
                 }
@@ -65,7 +65,8 @@ class AddEditHabitViewModel @Inject constructor(
                     priority = currentState.priority,
                     reminderTime = currentState.reminderTime,
                     hasReminder = currentState.hasReminder,
-                    reminderDays = if (currentState.hasReminder) currentState.reminderDays else emptyList()
+                    reminderDays = if (currentState.hasReminder) currentState.reminderDays else emptyList(),
+                    targetDays = currentState.targetDays // Сохраняем targetDays
                 )
 
                 if (currentHabitId == null) {
@@ -91,7 +92,13 @@ class AddEditHabitViewModel @Inject constructor(
                 _state.update { it.copy(description = event.description) }
             }
             is AddEditHabitEvent.TypeChanged -> {
-                _state.update { it.copy(type = event.type) }
+                _state.update {
+                    it.copy(
+                        type = event.type,
+                        // Сбрасываем targetDays при смене типа с WEEKLY на DAILY
+                        targetDays = if (event.type == HabitType.WEEKLY) it.targetDays else emptyList()
+                    )
+                }
             }
             is AddEditHabitEvent.PriorityChanged -> {
                 _state.update { it.copy(priority = event.priority) }
@@ -100,10 +107,18 @@ class AddEditHabitViewModel @Inject constructor(
                 _state.update { it.copy(reminderTime = event.reminderTime) }
             }
             is AddEditHabitEvent.HasReminderChanged -> {
-                _state.update { it.copy(hasReminder = event.hasReminder) }
+                _state.update {
+                    it.copy(
+                        hasReminder = event.hasReminder,
+                        reminderDays = if (!event.hasReminder) emptyList() else it.reminderDays
+                    )
+                }
             }
             is AddEditHabitEvent.ReminderDaysChanged -> {
                 _state.update { it.copy(reminderDays = event.days) }
+            }
+            is AddEditHabitEvent.TargetDaysChanged -> {
+                _state.update { it.copy(targetDays = event.days) }
             }
         }
     }
@@ -117,6 +132,7 @@ data class AddEditHabitState(
     val reminderTime: String? = null,
     val hasReminder: Boolean = false,
     val reminderDays: List<DayOfWeek> = emptyList(),
+    val targetDays: List<DayOfWeek> = emptyList(), // Дни выполнения для WEEKLY привычек
     val nameError: String? = null
 ) {
     val isValid: Boolean
@@ -130,5 +146,6 @@ sealed class AddEditHabitEvent {
     data class PriorityChanged(val priority: Priority) : AddEditHabitEvent()
     data class ReminderTimeChanged(val reminderTime: String?) : AddEditHabitEvent()
     data class HasReminderChanged(val hasReminder: Boolean) : AddEditHabitEvent()
-    data class ReminderDaysChanged(val days: List<DayOfWeek>) : AddEditHabitEvent() // Используем ваш DayOfWeek
+    data class ReminderDaysChanged(val days: List<DayOfWeek>) : AddEditHabitEvent()
+    data class TargetDaysChanged(val days: List<DayOfWeek>) : AddEditHabitEvent()
 }

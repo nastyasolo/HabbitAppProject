@@ -26,27 +26,27 @@ class HabitUseCases @Inject constructor(
     suspend fun insertHabit(habit: Habit) {
         repository.insertHabit(habit)
         if (habit.hasReminder) {
-            reminderScheduler.scheduleHabitReminder(habit)  // ← ИЗМЕНИЛИ: через инстанс
+            reminderScheduler.scheduleHabitReminder(habit)
         }
     }
 
     // Обновление привычки с напоминанием
     suspend fun updateHabit(habit: Habit) {
         // Отменяем старое напоминание
-        reminderScheduler.cancelReminder(habit.id, true)  // ← ИЗМЕНИЛИ: через инстанс
+        reminderScheduler.cancelReminder(habit.id, true)
 
         repository.updateHabit(habit)
 
         // Создаем новое напоминание
         if (habit.hasReminder) {
-            reminderScheduler.scheduleHabitReminder(habit)  // ← ИЗМЕНИЛИ: через инстанс
+            reminderScheduler.scheduleHabitReminder(habit)
         }
     }
 
     // Удаление привычки с напоминанием
     suspend fun deleteHabit(habit: Habit) {
         // Отменяем напоминание
-        reminderScheduler.cancelReminder(habit.id, true)  // ← ИЗМЕНИЛИ: через инстанс
+        reminderScheduler.cancelReminder(habit.id, true)
         repository.deleteHabit(habit)
     }
 

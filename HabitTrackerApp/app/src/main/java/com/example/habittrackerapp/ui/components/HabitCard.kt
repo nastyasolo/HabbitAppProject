@@ -69,6 +69,9 @@ fun HabitCard(
     habit: Habit,
     isCompletedToday: Boolean,
     weeklyProgress: Float = 0f,
+    completedDaysCount: Int = 0, //количество выполненных дней
+    totalTargetDays: Int = 7,
+    completedDaysOfWeek: Set<DayOfWeek> = emptySet(),
     onToggleCompletion: () -> Unit,
     onCardClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -363,7 +366,7 @@ fun HabitCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Прогресс недели",
+                            text = if (habit.type == HabitType.WEEKLY) "Прогресс недели" else "Прогресс за неделю",
                             style = MaterialTheme.typography.labelMedium,
                             color = if (isCompletedToday) {
                                 MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
@@ -372,7 +375,11 @@ fun HabitCard(
                             }
                         )
                         Text(
-                            text = "${(animatedProgress * 100).toInt()}%",
+                            text = if (habit.type == HabitType.WEEKLY) {
+                                if (totalTargetDays > 0) "$completedDaysCount/${totalTargetDays}" else "0/0"
+                            } else {
+                                "${(animatedProgress * 100).toInt()}%"
+                            },
                             style = MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Bold
                             ),
@@ -414,12 +421,13 @@ fun HabitCard(
                     if (habit.type == HabitType.WEEKLY) {
                         Spacer(modifier = Modifier.height(12.dp))
                         WeeklyDayIndicators(
-                            days = habit.targetDays,
-                            completedDays = 4, // Здесь должна быть логика вычисления выполненных дней
+                            targetDays = habit.targetDays,
+                            completedDaysOfWeek = completedDaysOfWeek, // Передаем выполненные дни
                             isCompletedToday = isCompletedToday
                         )
                     }
                 }
+
             }
 
             // Декоративный уголок для выполненных привычек
@@ -447,8 +455,8 @@ fun HabitCard(
 
 @Composable
 fun WeeklyDayIndicators(
-    days: List<DayOfWeek>,
-    completedDays: Int,
+    targetDays: List<DayOfWeek>,
+    completedDaysOfWeek: Set<DayOfWeek>,
     isCompletedToday: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -459,8 +467,9 @@ fun WeeklyDayIndicators(
         val dayNames = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
 
         dayNames.forEachIndexed { index, dayName ->
-            val isActive = days.contains(DayOfWeek.values()[index])
-            val isCompleted = index < completedDays
+            val dayOfWeek = DayOfWeek.fromInt(index + 1)
+            val isActive = targetDays.contains(dayOfWeek)
+            val isCompleted = completedDaysOfWeek.contains(dayOfWeek) // Теперь используем реальные выполненные дни
 
             Box(
                 contentAlignment = Alignment.Center,
@@ -501,6 +510,14 @@ fun WeeklyDayIndicators(
             }
         }
     }
+}
+
+
+// Вспомогательная функция для проверки дня недели
+fun isTodayDayOfWeek(dayOfWeek: DayOfWeek): Boolean {
+    val today = java.time.LocalDate.now()
+    val todayDayOfWeek = today.dayOfWeek.value // 1-7 (Monday-Sunday)
+    return DayOfWeek.fromInt(todayDayOfWeek) == dayOfWeek
 }
 
 @Preview(showBackground = true)

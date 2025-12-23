@@ -20,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.habittrackerapp.domain.model.DayOfWeek
+import com.example.habittrackerapp.domain.model.HabitType
 import com.example.habittrackerapp.domain.model.HabitWithCompletions
 import com.example.habittrackerapp.domain.model.Priority
 import com.example.habittrackerapp.ui.components.HabitCard
@@ -27,6 +29,14 @@ import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
 import com.example.habittrackerapp.ui.viewmodel.HabitListEvent
 import com.example.habittrackerapp.ui.viewmodel.HabitListViewModel
 import java.time.LocalDate
+
+
+data class Quadruple<out A, out B, out C, out D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D
+)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -399,10 +409,45 @@ fun HabitListScreen(
                             val habit = habitWithCompletions.habit
                             val isCompletedToday = habitWithCompletions.completedToday
 
-                            val weeklyProgress = habitWithCompletions.completions
-                                .filter { it.completed }
-                                .filter { it.date >= LocalDate.now().minusDays(6) }
-                                .size / 7f
+                            // Вычисляем прогресс в зависимости от типа привычки
+                            val (weeklyProgress, completedDaysCount, totalTargetDays, completedDaysOfWeek) = when (habit.type) {
+                                HabitType.DAILY -> {
+                                    // Для ежедневных: прогресс за последние 7 дней
+                                    val completedCount = habitWithCompletions.completions
+                                        .filter { it.completed }
+                                        .filter { it.date >= LocalDate.now().minusDays(6) }
+                                        .size
+                                    Quadruple(completedCount / 7f, completedCount, 7, emptySet<DayOfWeek>())
+                                }
+                                HabitType.WEEKLY -> {
+                                    // Для еженедельных: считаем выполненные дни из targetDays за текущую неделю
+                                    val startOfWeek = LocalDate.now().with(java.time.DayOfWeek.MONDAY)
+                                    val targetDaysSet = habit.targetDays.toSet()
+
+                                    // Получаем выполненные дни за текущую неделю
+                                    val completedDates = habitWithCompletions.completions
+                                        .filter { it.completed && it.date >= startOfWeek }
+                                        .map { it.date }
+
+                                    // Считаем сколько из targetDays было выполнено
+                                    val completedTargetDays = completedDates.count { date ->
+                                        val dayOfWeek = DayOfWeek.fromInt(date.dayOfWeek.value)
+                                        targetDaysSet.contains(dayOfWeek)
+                                    }
+
+                                    // Собираем выполненные дни недели в Set
+                                    val completedDaysOfWeek = completedDates.mapNotNull { date ->
+                                        val dayOfWeek = DayOfWeek.fromInt(date.dayOfWeek.value)
+                                        if (targetDaysSet.contains(dayOfWeek)) dayOfWeek else null
+                                    }.toSet()
+
+                                    val progress = if (targetDaysSet.isNotEmpty()) {
+                                        completedTargetDays.toFloat() / targetDaysSet.size
+                                    } else 0f
+
+                                    Quadruple(progress, completedTargetDays, targetDaysSet.size, completedDaysOfWeek)
+                                }
+                            }
 
                             AnimatedVisibility(
                                 visible = true,
@@ -413,6 +458,9 @@ fun HabitListScreen(
                                     habit = habit.copy(currentStreak = habitWithCompletions.currentStreak),
                                     isCompletedToday = isCompletedToday,
                                     weeklyProgress = weeklyProgress,
+                                    completedDaysCount = completedDaysCount,
+                                    totalTargetDays = totalTargetDays,
+                                    completedDaysOfWeek = completedDaysOfWeek, // Передаем выполненные дни
                                     onToggleCompletion = {
                                         viewModel.onEvent(
                                             HabitListEvent.ToggleCompletion(habit.id)
