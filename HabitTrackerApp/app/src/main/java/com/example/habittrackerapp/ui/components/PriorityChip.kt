@@ -1,6 +1,6 @@
 package com.example.habittrackerapp.ui.components
 
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -20,23 +20,23 @@ fun PriorityChip(
 ) {
     val (containerColor, selectedContainerColor, textColor) = when (priority) {
         Priority.HIGH -> Triple(
-            PriorityHighContainer.copy(alpha = 0.2f),
+            PriorityHighContainer.copy(alpha = if (isSelected) 1f else 0.2f),
             PriorityHighContainer,
             PriorityHigh
         )
         Priority.MEDIUM -> Triple(
-            PriorityMediumContainer.copy(alpha = 0.2f),
+            PriorityMediumContainer.copy(alpha = if (isSelected) 1f else 0.2f),
             PriorityMediumContainer,
             PriorityMedium
         )
         Priority.LOW -> Triple(
-            PriorityLowContainer.copy(alpha = 0.2f),
+            PriorityLowContainer.copy(alpha = if (isSelected) 1f else 0.2f),
             PriorityLowContainer,
             PriorityLow
         )
     }
 
-    ElevatedFilterChip(
+    FilterChip(
         selected = isSelected,
         onClick = onClick,
         label = {
@@ -48,7 +48,7 @@ fun PriorityChip(
                 color = if (isSelected) Color.Black else textColor
             )
         },
-        colors = FilterChipDefaults.elevatedFilterChipColors(
+        colors = FilterChipDefaults.filterChipColors(
             containerColor = containerColor,
             selectedContainerColor = selectedContainerColor,
             labelColor = if (isSelected) Color.Black else textColor,
@@ -62,7 +62,6 @@ fun PriorityChip(
             borderWidth = 1.dp,
             selectedBorderWidth = 2.dp
         ),
-        elevation = FilterChipDefaults.elevatedFilterChipElevation(),
         modifier = modifier.padding(vertical = 4.dp)
     )
 }

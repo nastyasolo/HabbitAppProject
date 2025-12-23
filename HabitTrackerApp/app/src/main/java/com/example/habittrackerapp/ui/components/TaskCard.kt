@@ -3,238 +3,338 @@ package com.example.habittrackerapp.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.habittrackerapp.domain.model.*
-import java.time.LocalDate
+import com.example.habittrackerapp.domain.model.Priority
+import com.example.habittrackerapp.domain.model.Task
+import com.example.habittrackerapp.utils.TaskUtils
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskCard(
     task: Task,
-    onTaskClick: () -> Unit,
     onToggleCompletion: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    isOverdue: Boolean
 ) {
-    val isOverdue = isTaskOverdue(task)
-    val isDueToday = isTaskDueToday(task)
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .clickable { onTaskClick() },
+            .clickable { onEdit() },
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isOverdue) {
-                MaterialTheme.colorScheme.errorContainer
-            } else if (isDueToday) {
-                MaterialTheme.colorScheme.tertiaryContainer
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
             } else {
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.surface
             }
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Левая часть: чекбокс и текст
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            // Чекбокс выполнения
+            Box(
+                modifier = Modifier.size(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(
+                    onClick = onToggleCompletion,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Circle,
+                        contentDescription = "Выполнить",
+                        tint = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Основная информация
+            Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Приоритетный индикатор
-                Box(
-                    modifier = Modifier
-                        .width(4.dp)
-                        .height(40.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(Color(getPriorityColor(task.priority)))
-                )
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Чекбокс выполнения
-                Checkbox(
-                    checked = task.isCompleted,
-                    onCheckedChange = { onToggleCompletion() },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = MaterialTheme.colorScheme.primary,
-                        uncheckedColor = MaterialTheme.colorScheme.outline
-                    )
-                )
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Информация о задаче
-                Column(
-                    modifier = Modifier.weight(1f)
+                // Заголовок с приоритетом
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Приоритет (точка)
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                when (task.priority) {
+                                    Priority.HIGH -> MaterialTheme.colorScheme.error
+                                    Priority.MEDIUM -> MaterialTheme.colorScheme.tertiary
+                                    Priority.LOW -> MaterialTheme.colorScheme.primary
+                                }
+                            )
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     Text(
                         text = task.title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = if (task.isCompleted) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                        fontSize = 16.sp
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                }
 
-                    if (task.description.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Время выполнения
+                if (task.dueDate != null || task.dueTime != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Schedule,
+                            contentDescription = "Срок выполнения",
+                            tint = if (isOverdue) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.size(16.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
                         Text(
-                            text = task.description,
+                            text = TaskUtils.formatTaskDateTime(task),
                             style = MaterialTheme.typography.bodySmall,
+                            color = if (isOverdue) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                }
+
+                // Описание (если есть)
+                if (task.description.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = task.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Категория (если есть)
+                task.category?.let { category ->
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.wrapContentWidth()
+                    ) {
+                        Text(
+                            text = TaskUtils.getCategoryLabel(category),
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
-                    }
-
-                    if (task.dueDate != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Outlined.CalendarToday,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = formatDueDate(task.dueDate, isOverdue, isDueToday),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (isOverdue) {
-                                    MaterialTheme.colorScheme.error
-                                } else if (isDueToday) {
-                                    MaterialTheme.colorScheme.tertiary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
-                        }
-                    }
-
-                    if (task.dueTime != null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Schedule,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = task.dueTime.format(DateTimeFormatter.ofPattern("HH:mm")),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    if (task.category != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Категория: ${task.category}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    if (task.dueTime != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Schedule,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = task.dueTime.format(DateTimeFormatter.ofPattern("HH:mm")),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
                 }
             }
 
-            // Правая часть: кнопка удаления
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Иконки справа
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Иконка напоминания (если есть)
+                if (task.hasReminder && task.reminderTime != null) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Notifications,
+                            contentDescription = "Напоминание",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                // Кнопка удаления
+                IconButton(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Удалить",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+
+    // Диалог подтверждения удаления
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Удалить задачу?") },
+            text = { Text("Задача \"${task.title}\" будет удалена без возможности восстановления.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Удалить", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CompletedTaskCard(
+    task: Task,
+    onToggleCompletion: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onEdit() }
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Чекбокс выполнения (заполненный)
+            Box(
+                modifier = Modifier.size(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(
+                    onClick = onToggleCompletion,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = "Отметить как невыполненное",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Основная информация (зачеркнутая)
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        textDecoration = TextDecoration.LineThrough
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                if (task.dueDate != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Выполнено ${task.dueDate?.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
+            // Кнопка удаления
             IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(40.dp)
+                onClick = { showDeleteDialog = true },
+                modifier = Modifier.size(24.dp)
             ) {
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = "Удалить",
-                    tint = MaterialTheme.colorScheme.error
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
     }
-}
 
-@Composable
-private fun formatDueDate(
-    dueDate: LocalDate,
-    isOverdue: Boolean,
-    isDueToday: Boolean
-): String {
-    val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-    val dateString = dueDate.format(formatter)
-
-    return when {
-        isOverdue -> "Просрочено: $dateString"
-        isDueToday -> "Сегодня"
-        isTaskDueTomorrow(dueDate) -> "Завтра"
-        else -> dateString
+    // Диалог подтверждения удаления
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Удалить задачу?") },
+            text = { Text("Задача \"${task.title}\" будет удалена без возможности восстановления.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Удалить", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
     }
-}
-
-private fun isTaskDueTomorrow(dueDate: LocalDate): Boolean {
-    val tomorrow = LocalDate.now().plusDays(1)
-    return dueDate.isEqual(tomorrow)
-}
-
-@Composable
-fun TaskCardPreview() {
-    val task = Task(
-        title = "Подготовить презентацию",
-        description = "Презентация для совещания с командой",
-        dueDate = LocalDate.now().plusDays(1),
-        priority = Priority.HIGH,
-        category = Category.WORK
-    )
-
-    TaskCard(
-        task = task,
-        onTaskClick = {},
-        onToggleCompletion = {},
-        onDelete = {}
-    )
 }
