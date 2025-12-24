@@ -316,7 +316,7 @@ fun HabitCard(
                         )
                     }
 
-                    // Стрик
+                    // Серия
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = if (isCompletedToday) {
@@ -332,7 +332,7 @@ fun HabitCard(
                         ) {
                             Icon(
                                 Icons.Default.Timeline,
-                                contentDescription = "Стрик",
+                                contentDescription = "Серия",
                                 modifier = Modifier.size(16.dp),
                                 tint = if (isCompletedToday) {
                                     MaterialTheme.colorScheme.onPrimaryContainer

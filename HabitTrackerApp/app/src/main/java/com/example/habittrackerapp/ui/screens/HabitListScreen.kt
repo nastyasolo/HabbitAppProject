@@ -138,7 +138,7 @@ fun HabitListScreen(
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("По стрику") },
+                                        text = { Text("По серии") },
                                         onClick = { sortBy = "streak"; showSortMenu = false },
                                         leadingIcon = {
                                             Icon(

@@ -58,7 +58,7 @@ fun StatisticsScreen(
         HabitType.WEEKLY to state.habits.count { it.habit.type == HabitType.WEEKLY }
     )
 
-    // Топ привычек по стрику
+    // Топ привычек по серии
     val topHabits = state.habits.sortedByDescending { it.currentStreak }.take(5)
 
     Scaffold(
@@ -173,7 +173,7 @@ fun StatisticsScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             StatMetric(
-                                title = "Средний стрик",
+                                title = "Средняя серия",
                                 value = averageStreak.toString(),
                                 icon = Icons.Default.TrendingUp,
                                 color = MaterialTheme.colorScheme.secondary,
@@ -181,7 +181,7 @@ fun StatisticsScreen(
                             )
 
                             StatMetric(
-                                title = "Макс. стрик",
+                                title = "Макс. серия",
                                 value = maxStreak.toString(),
                                 icon = Icons.Default.Star,
                                 color = MaterialTheme.colorScheme.primary,
@@ -192,7 +192,7 @@ fun StatisticsScreen(
                 }
             }
 
-            // Топ привычек по стрику
+            // Топ привычек по серии
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -551,7 +551,7 @@ fun TopHabitItem(
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // Стрик
+        // Серия
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
@@ -563,7 +563,7 @@ fun TopHabitItem(
             ) {
                 Icon(
                     Icons.Default.Timeline,
-                    contentDescription = "Стрик",
+                    contentDescription = "Серия",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(16.dp)
                 )
@@ -790,12 +790,12 @@ fun InterestingFacts(
             )
         }
 
-        // Факт 2: Средний стрик
+        // Факт 2: Средняя серия
         if (averageStreak > 0) {
             FactItem(
                 icon = Icons.Default.Timeline,
                 title = "Средняя серия",
-                description = "Ваш средний стрик составляет $averageStreak дней"
+                description = "Ваша средняя серия составляет $averageStreak дней"
             )
         }
 

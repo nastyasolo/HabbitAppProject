@@ -137,7 +137,7 @@ fun StatsOverview(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Средний стрик
+                        // Средняя серия
                         StatCard(
                             title = "Средний",
                             value = averageStreak.toString(),
