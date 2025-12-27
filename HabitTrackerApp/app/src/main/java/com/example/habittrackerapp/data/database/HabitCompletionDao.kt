@@ -36,4 +36,9 @@ interface HabitCompletionDao {
 
     @Query("SELECT date FROM habit_completions WHERE habitId = :habitId AND completed = 1")
     suspend fun getCompletedDatesSimple(habitId: String): List<String>
+
+
+    @Query("DELETE FROM habit_completions")
+    suspend fun deleteAllCompletions()
+
 }

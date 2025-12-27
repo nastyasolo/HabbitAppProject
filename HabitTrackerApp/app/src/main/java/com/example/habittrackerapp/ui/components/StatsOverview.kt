@@ -36,7 +36,7 @@ fun StatsOverview(
     val totalHabits = habits.size
     val completedToday = habits.count { it.completedToday }
     val averageStreak = if (habits.isNotEmpty()) {
-        habits.map { it.currentStreak }.average().toInt()
+        2
     } else 0
 
     val weeklyCompletion = habits.sumOf { habitWithCompletions ->

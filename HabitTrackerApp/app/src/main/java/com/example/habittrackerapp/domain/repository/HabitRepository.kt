@@ -33,4 +33,9 @@ interface HabitRepository {
     suspend fun getHabitCompletions(habitId: String): List<com.example.habittrackerapp.domain.model.HabitCompletion>
     suspend fun addCompletion(completion: com.example.habittrackerapp.domain.model.HabitCompletion)
     suspend fun removeCompletion(completion: com.example.habittrackerapp.domain.model.HabitCompletion)
+
+
+    suspend fun generateTestHabits(count: Int)
+    suspend fun clearAllData()
+
 }

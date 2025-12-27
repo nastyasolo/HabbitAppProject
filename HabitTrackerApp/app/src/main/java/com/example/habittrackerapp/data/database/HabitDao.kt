@@ -52,4 +52,10 @@ interface HabitDao {
 
     @Query("SELECT * FROM habits WHERE reminderTime IS NOT NULL AND reminderId IS NOT NULL")
     fun getHabitsWithReminders(): Flow<List<Habit>>
+
+
+    @Query("DELETE FROM habits")
+    suspend fun deleteAllHabits()
+
+
 }

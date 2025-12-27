@@ -25,11 +25,9 @@ import com.example.habittrackerapp.domain.model.HabitType
 import com.example.habittrackerapp.domain.model.HabitWithCompletions
 import com.example.habittrackerapp.domain.model.Priority
 import com.example.habittrackerapp.ui.components.HabitCard
-import com.example.habittrackerapp.ui.theme.HabitTrackerAppTheme
 import com.example.habittrackerapp.ui.viewmodel.HabitListEvent
 import com.example.habittrackerapp.ui.viewmodel.HabitListViewModel
 import java.time.LocalDate
-
 
 data class Quadruple<out A, out B, out C, out D>(
     val first: A,
@@ -46,9 +44,11 @@ fun HabitListScreen(
     viewModel: HabitListViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val showGenerateDialog by viewModel.showGenerateDialog.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var sortBy by remember { mutableStateOf("date") }
     var showSearch by remember { mutableStateOf(false) }
+    val isGeneratingData by viewModel.isGeneratingData.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.onEvent(HabitListEvent.Reload)
@@ -64,7 +64,7 @@ fun HabitListScreen(
             }
             .sortedWith(
                 when (sortBy) {
-                    "streak" -> compareByDescending<HabitWithCompletions> { it.currentStreak }
+                    "streak" -> compareByDescending<HabitWithCompletions> { it.habit.currentStreak }
                     "priority" -> compareByDescending<HabitWithCompletions> {
                         when (it.habit.priority) {
                             Priority.HIGH -> 3
@@ -108,6 +108,18 @@ fun HabitListScreen(
                                 Icon(
                                     imageVector = Icons.Default.Search,
                                     contentDescription = "Поиск",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            // Кнопка генерации тестовых данных
+                            IconButton(
+                                onClick = { viewModel.onEvent(HabitListEvent.ShowGenerateDialog) },
+                                enabled = !state.isLoading
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DataUsage,
+                                    contentDescription = "Тестовые данные",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -275,7 +287,12 @@ fun HabitListScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "Загружаем ваши привычки...",
+                                text = when {
+                                    isGeneratingData -> "Генерируем тестовые данные..."
+                                    state.isLoading && showGenerateDialog -> "Загружаем новые данные..."
+                                    state.isLoading -> "Загружаем ваши привычки..."
+                                    else -> "Загружаем ваши привычки..."
+                                },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -393,6 +410,14 @@ fun HabitListScreen(
                                     ) {
                                         Text("Создать первую привычку")
                                     }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Button(
+                                        onClick = { viewModel.onEvent(HabitListEvent.ShowGenerateDialog) },
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Сгенерировать тестовые данные")
+                                    }
                                 }
                             }
                         }
@@ -455,12 +480,12 @@ fun HabitListScreen(
                                 exit = fadeOut() + slideOutVertically()
                             ) {
                                 HabitCard(
-                                    habit = habit.copy(currentStreak = habitWithCompletions.currentStreak),
+                                    habit = habit,
                                     isCompletedToday = isCompletedToday,
                                     weeklyProgress = weeklyProgress,
                                     completedDaysCount = completedDaysCount,
                                     totalTargetDays = totalTargetDays,
-                                    completedDaysOfWeek = completedDaysOfWeek, // Передаем выполненные дни
+                                    completedDaysOfWeek = completedDaysOfWeek,
                                     onToggleCompletion = {
                                         viewModel.onEvent(
                                             HabitListEvent.ToggleCompletion(habit.id)
@@ -472,6 +497,68 @@ fun HabitListScreen(
                         }
                     }
                 }
+            }
+
+            // Диалог для генерации тестовых данных
+            if (showGenerateDialog) {
+                AlertDialog(
+                    onDismissRequest = { viewModel.onEvent(HabitListEvent.HideGenerateDialog) },
+                    title = { Text("Генерация тестовых данных") },
+                    text = {
+                        Text("Сколько привычек сгенерировать? Привычки будут созданы с тестовыми выполнениями для демонстрации стриков.")
+                    },
+                    confirmButton = {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        viewModel.onEvent(HabitListEvent.GenerateTestHabits(1))
+                                    }
+                                ) {
+                                    Text("1 привычка")
+                                }
+                                Button(
+                                    onClick = {
+                                        viewModel.onEvent(HabitListEvent.GenerateTestHabits(10))
+                                    }
+                                ) {
+                                    Text("10 привычек")
+                                }
+                            }
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        viewModel.onEvent(HabitListEvent.GenerateTestHabits(100))
+                                    }
+                                ) {
+                                    Text("100 привычек")
+                                }
+                                Button(
+                                    onClick = {
+                                        viewModel.onEvent(HabitListEvent.ClearAllData)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                ) {
+                                    Text("Очистить всё")
+                                }
+                            }
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.onEvent(HabitListEvent.HideGenerateDialog) }) {
+                            Text("Отмена")
+                        }
+                    }
+                )
             }
         }
     }

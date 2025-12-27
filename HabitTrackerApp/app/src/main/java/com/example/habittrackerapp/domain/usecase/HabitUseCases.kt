@@ -3,6 +3,8 @@ package com.example.habittrackerapp.domain.usecase
 import com.example.habittrackerapp.domain.model.Habit
 import com.example.habittrackerapp.domain.model.HabitWithCompletions
 import com.example.habittrackerapp.domain.repository.HabitRepository
+import com.example.habittrackerapp.ui.viewmodel.FirestoreOnlyHabitListEvent
+import com.example.habittrackerapp.ui.viewmodel.HabitListEvent
 import com.example.habittrackerapp.utils.reminder.ReminderScheduler
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -11,6 +13,16 @@ class HabitUseCases @Inject constructor(
     private val repository: HabitRepository,
     private val reminderScheduler: ReminderScheduler
 ) {
+
+    // Внутренние объекты для генерации данных
+    private val generateTestHabitsUseCase = GenerateTestHabits(repository)
+    private val clearAllDataUseCase = ClearAllData(repository)
+
+    // Методы для доступа к ним
+    suspend fun generateTestHabits(count: Int) = generateTestHabitsUseCase(count)
+    suspend fun clearAllData() = clearAllDataUseCase()
+
+
 
     // Получение всех привычек (invoke для совместимости с GetHabitsUseCase)
     operator fun invoke(): Flow<List<Habit>> = repository.getAllHabits()
@@ -62,4 +74,20 @@ class HabitUseCases @Inject constructor(
     // Получение всех привычек с их выполнениями
     fun getAllHabitsWithCompletions(): Flow<List<HabitWithCompletions>> =
         repository.getAllHabitsWithCompletions()
+
+    class GenerateTestHabits(
+        private val repository: HabitRepository
+    ) {
+        suspend operator fun invoke(count: Int) {
+            repository.generateTestHabits(count)
+        }
+    }
+
+    class ClearAllData(
+        private val repository: HabitRepository
+    ) {
+        suspend operator fun invoke() {
+            repository.clearAllData()
+        }
+    }
 }

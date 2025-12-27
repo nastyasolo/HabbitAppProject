@@ -70,7 +70,7 @@ fun AuthenticatedApp() {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val showBottomNavigation = when (currentRoute) {
-        "habitList", "tasks", "statistics", "settings" -> true
+        "habitList", "tasks", "statistics", "settings", "firestore_only_habits" -> true
         else -> false
     }
 
@@ -167,6 +167,36 @@ fun AuthenticatedApp() {
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
+            // Firestore-only демо экраны
+            composable("firestore_only_habits") {
+                FirestoreOnlyHabitListScreen(
+                    onAddHabitClick = {
+                        navController.navigate("firestore_only_add_edit_habit/null")
+                    },
+                    onHabitClick = { habitId ->
+                        navController.navigate("firestore_only_add_edit_habit/$habitId")
+                    },
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = "firestore_only_add_edit_habit/{habitId}",
+                arguments = listOf(
+                    navArgument("habitId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val habitId = backStackEntry.arguments?.getString("habitId")
+                FirestoreOnlyAddEditHabitScreen(
+                    habitId = if (habitId == "null") null else habitId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
         }
     }
 }

@@ -1,11 +1,14 @@
 package com.example.habittrackerapp.data.repository
 
+
 import com.example.habittrackerapp.data.database.HabitCompletionDao
 import com.example.habittrackerapp.data.database.HabitDao
 import com.example.habittrackerapp.data.mapper.FirestoreHabitMapper
 import com.example.habittrackerapp.data.mapper.HabitCompletionMapper
 import com.example.habittrackerapp.data.mapper.HabitMapper
 import com.example.habittrackerapp.data.remote.HabitRemoteDataSource
+import com.example.habittrackerapp.data.util.StreakCalculator
+import com.example.habittrackerapp.data.util.TestDataGenerator
 import com.example.habittrackerapp.domain.model.*
 import com.example.habittrackerapp.domain.repository.AuthRepository
 import com.example.habittrackerapp.domain.repository.HabitRepository
@@ -13,6 +16,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import javax.inject.Inject
 
 class SyncHabitRepositoryImpl @Inject constructor(
@@ -93,17 +97,23 @@ class SyncHabitRepositoryImpl @Inject constructor(
     }
 
     override suspend fun toggleHabitCompletion(id: String) {
+        println("DEBUG: [SyncHabitRepositoryImpl] toggleHabitCompletion для привычки $id")
+
         val today = LocalDate.now()
         val todayString = today.format(dateFormatter)
 
         // Проверяем, есть ли запись за сегодня
         val existingCompletion = completionDao.getCompletionByDate(id, todayString)
 
+        println("DEBUG: [SyncHabitRepositoryImpl] existingCompletion: $existingCompletion")
+
         if (existingCompletion != null) {
             // Отмена выполнения - удаляем запись
+            println("DEBUG: [SyncHabitRepositoryImpl] Удаляем выполнение за сегодня")
             completionDao.deleteCompletion(existingCompletion)
         } else {
             // Создаем новую запись о выполнении
+            println("DEBUG: [SyncHabitRepositoryImpl] Создаем новое выполнение за сегодня")
             val completion = HabitCompletion(
                 habitId = id,
                 date = today,
@@ -113,7 +123,7 @@ class SyncHabitRepositoryImpl @Inject constructor(
             completionDao.insertCompletion(HabitCompletionMapper.toEntity(completion))
         }
 
-        // Пересчитываем стрик
+        println("DEBUG: [SyncHabitRepositoryImpl] Пересчитываем стрик после toggle")
         recalculateStreak(id)
 
         // Синхронизируем с сервером
@@ -134,6 +144,8 @@ class SyncHabitRepositoryImpl @Inject constructor(
                 remoteDataSource.saveCompletion(firestoreCompletion)
             }
         }
+
+        println("DEBUG: [SyncHabitRepositoryImpl] toggleHabitCompletion завершен для привычки $id")
     }
 
     override suspend fun getTodayHabits(): List<Habit> {
@@ -293,96 +305,45 @@ class SyncHabitRepositoryImpl @Inject constructor(
     }
 
     private suspend fun recalculateStreak(habitId: String) {
-        val completions = completionDao.getCompletedDatesSimple(habitId)
-        val habit = habitDao.getHabitById(habitId) ?: return
+        println("DEBUG: [SyncHabitRepositoryImpl] Начинаем пересчет стрика для привычки $habitId")
 
+        val completions = completionDao.getCompletedDatesSimple(habitId)
+        println("DEBUG: [SyncHabitRepositoryImpl] Завершенные даты: $completions")
+
+        val parsedDates = completions.mapNotNull { dateStr ->
+            try {
+                LocalDate.parse(dateStr)
+            } catch (e: Exception) {
+                null
+            }
+        }.toSet()
+
+        println("DEBUG: [SyncHabitRepositoryImpl] Распарсенные даты: $parsedDates")
+
+        val habit = habitDao.getHabitById(habitId) ?: run {
+            println("DEBUG: [SyncHabitRepositoryImpl] Привычка $habitId не найдена")
+            return
+        }
         val domainHabit = HabitMapper.toDomain(habit)
 
-        when (domainHabit.type) {
-            HabitType.DAILY -> {
-                // Существующая логика для DAILY привычек
-                var currentStreak = 0
-                var longestStreak = habit.longestStreak
-                var currentDate = LocalDate.now()
-                val sortedDates = completions
-                    .mapNotNull { dateStr ->
-                        try {
-                            LocalDate.parse(dateStr)
-                        } catch (e: Exception) {
-                            null
-                        }
-                    }
-                    .sortedDescending()
+        val (currentStreak, lastCompleted) = StreakCalculator.calculateStreak(domainHabit, parsedDates)
 
-                for (completionDate in sortedDates) {
-                    if (completionDate == currentDate ||
-                        (currentStreak == 0 && completionDate == currentDate.minusDays(1))) {
-                        currentStreak++
-                        currentDate = currentDate.minusDays(1)
-                    } else {
-                        break
-                    }
-                }
+        println("DEBUG: [SyncHabitRepositoryImpl] Рассчитанный стрик: $currentStreak, lastCompleted: $lastCompleted")
+        println("DEBUG: [SyncHabitRepositoryImpl] Текущий longestStreak в базе: ${habit.longestStreak}")
 
-                if (currentStreak > longestStreak) {
-                    longestStreak = currentStreak
-                    habitDao.updateLongestStreak(habitId, longestStreak)
-                }
-
-                val lastCompleted = sortedDates.firstOrNull()?.format(dateFormatter)
-                habitDao.updateHabitStreak(habitId, currentStreak, lastCompleted)
-            }
-
-            HabitType.WEEKLY -> {
-                // Новая логика для WEEKLY привычек
-                val targetDaysSet = domainHabit.targetDays.toSet()
-                if (targetDaysSet.isEmpty()) return
-
-                var currentStreak = 0
-                var longestStreak = habit.longestStreak
-
-                // Группируем выполнения по неделям
-                val completedDates = completions.mapNotNull { dateStr ->
-                    try {
-                        LocalDate.parse(dateStr)
-                    } catch (e: Exception) {
-                        null
-                    }
-                }
-
-                // Проверяем недели с конца
-                var weekStart = LocalDate.now().with(java.time.DayOfWeek.MONDAY)
-
-                while (true) {
-                    val weekEnd = weekStart.plusDays(6)
-                    val weekCompletedDates = completedDates.filter {
-                        it >= weekStart && it <= weekEnd
-                    }
-
-                    // Проверяем, выполнены ли все целевые дни на этой неделе
-                    val completedDaysInWeek = weekCompletedDates.map { date ->
-                        DayOfWeek.fromInt(date.dayOfWeek.value)
-                    }.toSet()
-
-                    val isWeekCompleted = targetDaysSet.all { it in completedDaysInWeek }
-
-                    if (isWeekCompleted) {
-                        currentStreak++
-                        weekStart = weekStart.minusWeeks(1)
-                    } else {
-                        break
-                    }
-                }
-
-                if (currentStreak > longestStreak) {
-                    longestStreak = currentStreak
-                    habitDao.updateLongestStreak(habitId, longestStreak)
-                }
-
-                val lastCompleted = completedDates.maxOrNull()?.format(dateFormatter)
-                habitDao.updateHabitStreak(habitId, currentStreak, lastCompleted)
-            }
+        // Обновляем longestStreak если нужно
+        if (currentStreak > habit.longestStreak) {
+            println("DEBUG: [SyncHabitRepositoryImpl] Обновляем longestStreak на $currentStreak")
+            habitDao.updateLongestStreak(habitId, currentStreak)
         }
+
+        // Обновляем стрик
+        val lastCompletedStr = lastCompleted?.format(dateFormatter)
+        println("DEBUG: [SyncHabitRepositoryImpl] Обновляем habit: currentStreak=$currentStreak, lastCompleted=$lastCompletedStr")
+
+        habitDao.updateHabitStreak(habitId, currentStreak, lastCompletedStr)
+
+        println("DEBUG: [SyncHabitRepositoryImpl] Пересчет стрика завершен для привычки $habitId")
     }
 
     private suspend fun syncPendingCompletions(): Boolean {
@@ -408,5 +369,31 @@ class SyncHabitRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             false
         }
+    }
+
+
+
+
+    override suspend fun generateTestHabits(count: Int) {
+        val userId = authRepository.getCurrentUser()?.id ?: "local_user"
+
+        val testData = TestDataGenerator.generateTestHabits(count, userId)
+
+        testData.forEach { (habit, completions) ->
+            // Вставляем привычку
+            val roomHabit = HabitMapper.toEntity(habit)
+            habitDao.insertHabit(roomHabit)
+
+            // Вставляем выполнения
+            completions.forEach { completion ->
+                val roomCompletion = HabitCompletionMapper.toEntity(completion)
+                completionDao.insertCompletion(roomCompletion)
+            }
+        }
+    }
+    override suspend fun clearAllData() {
+        habitDao.deleteAllHabits()
+        completionDao.deleteAllCompletions()
+
     }
 }

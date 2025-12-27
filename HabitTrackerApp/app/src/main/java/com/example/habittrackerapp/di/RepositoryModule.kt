@@ -1,9 +1,7 @@
 package com.example.habittrackerapp.di
 
 import com.example.habittrackerapp.data.mapper.TaskMapper
-import com.example.habittrackerapp.data.repository.AuthRepositoryImpl
-import com.example.habittrackerapp.data.repository.SyncHabitRepositoryImpl
-import com.example.habittrackerapp.data.repository.TaskRepositoryImpl
+import com.example.habittrackerapp.data.repository.*
 import com.example.habittrackerapp.domain.repository.AuthRepository
 import com.example.habittrackerapp.domain.repository.HabitRepository
 import com.example.habittrackerapp.domain.repository.TaskRepository
@@ -31,6 +29,14 @@ object RepositoryModule {
         syncHabitRepositoryImpl: SyncHabitRepositoryImpl
     ): HabitRepository {
         return syncHabitRepositoryImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirestoreOnlyHabitRepository(
+        authRepository: AuthRepository
+    ): FirestoreOnlyHabitRepository {
+        return FirestoreOnlyHabitRepository(authRepository)
     }
 
     @Provides

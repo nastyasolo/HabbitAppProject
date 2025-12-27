@@ -18,6 +18,12 @@ class HabitListViewModel @Inject constructor(
     private val _state = MutableStateFlow(HabitListState())
     val state: StateFlow<HabitListState> = _state
 
+    private val _showGenerateDialog = MutableStateFlow(false)
+    val showGenerateDialog: StateFlow<Boolean> = _showGenerateDialog
+
+    private val _isGeneratingData = MutableStateFlow(false)
+    val isGeneratingData: StateFlow<Boolean> = _isGeneratingData
+
     init {
         loadHabits()
     }
@@ -44,13 +50,53 @@ class HabitListViewModel @Inject constructor(
     fun onEvent(event: HabitListEvent) {
         when (event) {
             is HabitListEvent.ToggleCompletion -> {
-                viewModelScope.launch { habitUseCases.toggleHabitCompletion(event.habitId) }
+                viewModelScope.launch {
+                    println("DEBUG: [HabitListViewModel] ToggleCompletion для привычки ${event.habitId}")
+                    habitUseCases.toggleHabitCompletion(event.habitId)
+//                    loadHabits()
+                }
             }
             is HabitListEvent.DeleteHabit -> {
-                viewModelScope.launch { habitUseCases.deleteHabit(event.habit) }
+                viewModelScope.launch {
+                    habitUseCases.deleteHabit(event.habit)
+                    loadHabits()
+                }
             }
             HabitListEvent.Reload -> {
                 loadHabits()
+            }
+            HabitListEvent.ShowGenerateDialog -> {
+                _showGenerateDialog.value = true
+            }
+            HabitListEvent.HideGenerateDialog -> {
+                _showGenerateDialog.value = false
+            }
+            is HabitListEvent.GenerateTestHabits -> {
+                viewModelScope.launch {
+                    _isGeneratingData.value = true
+                    _state.update { it.copy(isLoading = true) }
+
+                    try {
+                        habitUseCases.generateTestHabits(event.count)
+                        _showGenerateDialog.value = false
+                        loadHabits()
+                    } finally {
+                        _isGeneratingData.value = false
+                    }
+                }
+            }
+            HabitListEvent.ClearAllData -> {
+                viewModelScope.launch {
+                    _isGeneratingData.value = true
+                    _state.update { it.copy(isLoading = true) }
+
+                    try {
+                        habitUseCases.clearAllData()
+                        loadHabits()
+                    } finally {
+                        _isGeneratingData.value = false
+                    }
+                }
             }
         }
     }
@@ -59,11 +105,16 @@ class HabitListViewModel @Inject constructor(
 data class HabitListState(
     val habits: List<HabitWithCompletions> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isGeneratingData: Boolean = false  // Добавили поле
 )
 
 sealed class HabitListEvent {
     data class ToggleCompletion(val habitId: String) : HabitListEvent()
     data class DeleteHabit(val habit: Habit) : HabitListEvent()
     object Reload : HabitListEvent()
+    object ShowGenerateDialog : HabitListEvent()
+    object HideGenerateDialog : HabitListEvent()
+    data class GenerateTestHabits(val count: Int) : HabitListEvent()
+    object ClearAllData : HabitListEvent()
 }

@@ -57,6 +57,12 @@ fun HabitBottomNavigation(
             selectedIcon = R.drawable.ic_settings_filled,
             unselectedIcon = R.drawable.ic_settings_outline
         ),
+        BottomNavItem(
+            route = "firestore_only_habits",
+            title = "ПР",
+            selectedIcon = R.drawable.ic_settings_filled,
+            unselectedIcon = R.drawable.ic_settings_outline
+        ),
 
     )
 

@@ -42,9 +42,8 @@ fun StatisticsScreen(
     val totalHabits = state.habits.size
     val completedToday = state.habits.count { it.completedToday }
     val totalCompletions = state.habits.sumOf { it.completions.count { c -> c.completed } }
-    val averageStreak = if (totalHabits > 0) state.habits.map { it.currentStreak }.average().toInt() else 0
-    val maxStreak = if (state.habits.isNotEmpty()) state.habits.maxOf { it.currentStreak } else 0
-
+    val averageStreak = if (totalHabits > 0) state.habits.map { it.habit.currentStreak }.average().toInt() else 0
+    val maxStreak = if (state.habits.isNotEmpty()) state.habits.maxOf { it.habit.currentStreak } else 0
     // Распределение по приоритетам
     val priorityStats = mapOf(
         Priority.HIGH to state.habits.count { it.habit.priority == Priority.HIGH },
@@ -59,7 +58,7 @@ fun StatisticsScreen(
     )
 
     // Топ привычек по серии
-    val topHabits = state.habits.sortedByDescending { it.currentStreak }.take(5)
+    val topHabits = state.habits.sortedByDescending { it.habit.currentStreak }.take(5)
 
     Scaffold(
         topBar = {
@@ -219,7 +218,7 @@ fun StatisticsScreen(
                             )
 
                             Icon(
-                                Icons.Default.EmojiEvents, // Заменили Trophy на EmojiEvents
+                                Icons.Default.EmojiEvents,
                                 contentDescription = "Топ привычек",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp)
@@ -569,7 +568,7 @@ fun TopHabitItem(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "${habitWithCompletions.currentStreak}",
+                    text = "${habitWithCompletions.habit.currentStreak}",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),
@@ -827,7 +826,7 @@ fun InterestingFacts(
             val completedTodayCount = habits.count { it.completedToday }
             val consistencyRate = (completedTodayCount.toFloat() / habits.size * 100).roundToInt()
             FactItem(
-                icon = Icons.Default.TrendingUp, // Заменили Consistency на TrendingUp
+                icon = Icons.Default.TrendingUp,
                 title = "Консистентность",
                 description = "Сегодня вы выполнили $consistencyRate% привычек"
             )
