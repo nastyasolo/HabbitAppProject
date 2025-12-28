@@ -38,7 +38,7 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
 
-    // Google Sign-In launcher
+
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->

@@ -26,18 +26,24 @@ fun MainApp() {
     val authViewModel: AuthViewModel = hiltViewModel()
     val authState by authViewModel.uiState.collectAsState()
 
-    if (authState.isAuthenticated) {
-        AuthenticatedApp()
-    } else {
-        AuthScreen()
+    when {
+        authState.isLoading -> {
+            CircularProgressIndicator()
+        }
+        !authState.isAuthenticated -> {
+            AuthScreen()
+        }
+        else -> {
+            AuthenticatedApp()
+        }
     }
 }
 
 @Composable
 fun AuthScreen() {
     val navController = rememberNavController()
-    val authViewModel: AuthViewModel = hiltViewModel()
-    val authState by authViewModel.uiState.collectAsState()
+//    val authViewModel: AuthViewModel = hiltViewModel()
+//    val authState by authViewModel.uiState.collectAsState()
 
     NavHost(
         navController = navController,
@@ -130,7 +136,7 @@ fun AuthenticatedApp() {
                 )
             }
 
-            // ТАСКИ
+            // Задачи
             composable("tasks") {
                 TaskListScreen(
                     navController = navController

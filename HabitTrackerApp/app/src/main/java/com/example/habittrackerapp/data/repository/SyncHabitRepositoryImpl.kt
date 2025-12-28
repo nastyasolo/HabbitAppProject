@@ -14,7 +14,9 @@ import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class SyncHabitRepositoryImpl @Inject constructor(
     private val habitDao: HabitDao,
     private val completionDao: HabitCompletionDao,
@@ -300,7 +302,6 @@ class SyncHabitRepositoryImpl @Inject constructor(
 
         when (domainHabit.type) {
             HabitType.DAILY -> {
-                // Существующая логика для DAILY привычек
                 var currentStreak = 0
                 var longestStreak = habit.longestStreak
                 var currentDate = LocalDate.now()
@@ -334,14 +335,13 @@ class SyncHabitRepositoryImpl @Inject constructor(
             }
 
             HabitType.WEEKLY -> {
-                // Новая логика для WEEKLY привычек
                 val targetDaysSet = domainHabit.targetDays.toSet()
                 if (targetDaysSet.isEmpty()) return
 
                 var currentStreak = 0
                 var longestStreak = habit.longestStreak
 
-                // Группируем выполнения по неделям
+
                 val completedDates = completions.mapNotNull { dateStr ->
                     try {
                         LocalDate.parse(dateStr)
@@ -350,7 +350,7 @@ class SyncHabitRepositoryImpl @Inject constructor(
                     }
                 }
 
-                // Проверяем недели с конца
+
                 var weekStart = LocalDate.now().with(java.time.DayOfWeek.MONDAY)
 
                 while (true) {

@@ -76,7 +76,7 @@ class FirestoreHabitDataSource @Inject constructor(
             }
     }
 
-    // Реализация новых методов для истории выполнения
+
     override suspend fun saveCompletion(completion: FirestoreCompletion): Result<Unit> {
         return try {
             firestore.collection("habits")

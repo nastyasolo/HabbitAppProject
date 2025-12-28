@@ -86,7 +86,6 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    // Получаем Intent для Google Sign-In
     fun getGoogleSignInIntent(): Intent {
         return (authRepository as AuthRepositoryImpl).getGoogleSignInIntent()
     }
@@ -130,7 +129,7 @@ class AuthViewModel @Inject constructor(
 }
 
 data class AuthUiState(
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val isAuthenticated: Boolean = false,
     val currentUser: com.example.habittrackerapp.domain.model.User? = null,
     val error: String? = null

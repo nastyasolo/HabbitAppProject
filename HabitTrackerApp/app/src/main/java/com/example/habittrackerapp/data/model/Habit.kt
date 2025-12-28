@@ -12,7 +12,7 @@ data class Habit(
     val type: String = "DAILY",
     val priority: String = "MEDIUM",
     val reminderTime: String? = null,
-    val targetDays: String = "",  // JSON список дней для WEEKLY
+    val targetDays: String = "",
     val category: String = "General",
     val createdAt: Long = System.currentTimeMillis(),
     // Кэшированные поля (вычисляются из истории)

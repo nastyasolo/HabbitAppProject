@@ -63,6 +63,7 @@ dependencies {
 //    implementation(libs.androidx.hilt.work)
     // Hilt для WorkManager
     implementation("androidx.hilt:hilt-work:1.3.0")
+    implementation(libs.androidx.test.espresso.core)
     ksp("androidx.hilt:hilt-compiler:1.3.0")
 
 

@@ -90,7 +90,6 @@ class AuthRepositoryImpl @Inject constructor(
         try {
             auth.signOut()
         } catch (e: Exception) {
-            // Игнорируем ошибки при выходе
         }
     }
 
@@ -105,7 +104,6 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    // Новый метод для получения Google Sign-In Intent
     fun getGoogleSignInIntent(): android.content.Intent {
         val webClientId = context.getString(com.example.habittrackerapp.R.string.default_web_client_id)
         val client = GoogleSignInHelper.getGoogleSignInClient(context, webClientId)

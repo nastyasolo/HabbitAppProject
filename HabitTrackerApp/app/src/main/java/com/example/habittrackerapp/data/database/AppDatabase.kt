@@ -26,15 +26,14 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var Instance: AppDatabase? = null
 
-        // Миграция с версии 1 на 2
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Добавляем новые столбцы для задач
+                // Столбцы для задач
                 database.execSQL("ALTER TABLE tasks ADD COLUMN reminderTime TEXT")
                 database.execSQL("ALTER TABLE tasks ADD COLUMN hasReminder INTEGER NOT NULL DEFAULT 0")
                 database.execSQL("ALTER TABLE tasks ADD COLUMN reminderId TEXT DEFAULT ''")
 
-                // Добавляем новые столбцы для привычек
+                // Новые столбцы для привычек
                 database.execSQL("ALTER TABLE habits ADD COLUMN reminderId TEXT DEFAULT ''")
                 database.execSQL("ALTER TABLE habits ADD COLUMN hasReminder INTEGER NOT NULL DEFAULT 0")
                 database.execSQL("ALTER TABLE habits ADD COLUMN reminderDays TEXT DEFAULT ''")
@@ -48,7 +47,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "habit_database"
                 )
-                    .addMigrations(MIGRATION_1_2) //
+                    .addMigrations(MIGRATION_1_2)
                     .fallbackToDestructiveMigration() //  Оставляем для безопасности
                     .build()
                     .also { Instance = it }

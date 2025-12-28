@@ -12,6 +12,8 @@ import androidx.work.WorkerParameters
 import com.example.habittrackerapp.R
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @HiltWorker
 class ReminderWorker @AssistedInject constructor(
@@ -24,9 +26,10 @@ class ReminderWorker @AssistedInject constructor(
         const val CHANNEL_NAME = "Напоминания"
     }
 
-    override suspend fun doWork(): Result {
-        return try {
-            val entityId = inputData.getString("entityId") ?: return Result.failure()
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        println("DEBUG: SimpleRestoreRemindersWorker started")
+        try {
+            val entityId = inputData.getString("entityId") ?: Result.failure()
             val title = inputData.getString("title") ?: "Напоминание"
             val message = inputData.getString("message") ?: "Время выполнить задачу!"
 

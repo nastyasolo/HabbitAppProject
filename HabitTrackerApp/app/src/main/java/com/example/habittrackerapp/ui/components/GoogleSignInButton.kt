@@ -32,7 +32,7 @@ fun GoogleSignInButton(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_google), // Создай иконку Google
+                painter = painterResource(id = R.drawable.ic_google),
                 contentDescription = "Google",
                 modifier = Modifier.size(24.dp)
             )

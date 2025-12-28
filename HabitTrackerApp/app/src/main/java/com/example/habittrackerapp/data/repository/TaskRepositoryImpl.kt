@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class TaskRepositoryImpl @Inject constructor(
     private val taskDao: TaskDao,
     private val mapper: TaskMapper
